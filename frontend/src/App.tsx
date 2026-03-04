@@ -36,7 +36,17 @@ function App() {
     socket.connect();
 
     socket.on('connect', () => { });
-    socket.on('disconnect', () => { });
+    socket.on('disconnect', () => {
+      setRoomId('');
+      setPlayer(null);
+      setPlayers([]);
+      setGameState('lobby');
+      setHand([]);
+      setLastPenalty(null);
+      setIsCreator(false);
+      setErrorMsg('Connessione persa al Server. Rientra nella stanza.');
+      setTimeout(() => setErrorMsg(''), 6000);
+    });
 
     socket.on('room_update', (roomPlayers: Player[]) => {
       setPlayers(roomPlayers);
