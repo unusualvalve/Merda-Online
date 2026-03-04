@@ -30,6 +30,7 @@ function App() {
   const [hand, setHand] = useState<Card[]>([]);
   const [errorMsg, setErrorMsg] = useState('');
   const [winnerId, setWinnerId] = useState<string | null>(null);
+  const [reactedPlayers, setReactedPlayers] = useState<string[]>([]);
   const [lastPenalty, setLastPenalty] = useState<{ card: Card, loserId: string } | null>(null);
   const [isCreator, setIsCreator] = useState(false);
 
@@ -43,6 +44,7 @@ function App() {
       setPlayers([]);
       setGameState('lobby');
       setHand([]);
+      setReactedPlayers([]);
       setLastPenalty(null);
       setIsCreator(false);
       setErrorMsg('Connessione persa al Server. Rientra nella stanza.');
@@ -64,6 +66,7 @@ function App() {
       setHand(hand);
       setPlayers(players);
       setGameState('playing');
+      setReactedPlayers([]);
       setLastPenalty(null);
     });
 
@@ -82,6 +85,11 @@ function App() {
     socket.on('merda_reaction_phase', ({ winnerId }) => {
       setGameState('merda_called');
       setWinnerId(winnerId);
+      setReactedPlayers([]);
+    });
+
+    socket.on('reaction_update', (safePlayerIds: string[]) => {
+      setReactedPlayers(safePlayerIds);
     });
 
     socket.on('round_end', ({ loserId, penaltyCard, players }) => {
@@ -89,6 +97,7 @@ function App() {
       setLastPenalty({ card: penaltyCard, loserId });
       setPlayers(players);
       setHand([]);
+      setReactedPlayers([]);
       const me = players.find((p: Player) => p.id === socket.id);
       if (me) setPlayer(me);
     });
@@ -115,6 +124,7 @@ function App() {
       socket.off('player_ready');
       socket.off('turn_started');
       socket.off('merda_reaction_phase');
+      socket.off('reaction_update');
       socket.off('round_end');
       socket.off('game_canceled');
       socket.off('error');
@@ -191,6 +201,7 @@ function App() {
           hand={hand}
           gameState={gameState}
           winnerId={winnerId}
+          reactedPlayers={reactedPlayers}
           onPassCard={handlePassCard}
           onMerdaShouted={handleMerdaShouted}
           onMerdaReaction={handleMerdaReaction}

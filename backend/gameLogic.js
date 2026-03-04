@@ -262,8 +262,32 @@ export function setupGameHandlers(io, socket) {
             if (isWin) {
                 room.status = 'merda_called';
                 room.merdaReactions = [];
+                room.winnerId = player.id;
+
                 // Alert others to show the button
                 io.to(roomId).emit('merda_reaction_phase', { winnerId: player.id });
+
+                // Broadcast reaction status (initially empty)
+                io.to(roomId).emit('reaction_update', []);
+
+                // 2-3 Player Dummy Reactions
+                if (room.dummyHands && room.dummyHands.length > 0) {
+                    room.dummyHands.forEach(dummy => {
+                        const delay = 400 + Math.random() * 1200; // 0.4s to 1.6s
+                        dummy.reactionTimer = setTimeout(() => {
+                            if (room.status === 'merda_called') {
+                                if (!room.merdaReactions.find(r => r.id === dummy.id)) {
+                                    room.merdaReactions.push({ id: dummy.id, timestamp: Date.now() });
+                                    io.to(roomId).emit('reaction_update', room.merdaReactions.map(r => r.id));
+                                    if (room.merdaReactions.length === 3) {
+                                        clearTimeout(room.merdaTimeout);
+                                        handleRoundEnd(roomId, io);
+                                    }
+                                }
+                            }
+                        }, delay);
+                    });
+                }
 
                 // Failsafe timer: 10 seconds max
                 room.merdaTimeout = setTimeout(() => {
@@ -287,6 +311,9 @@ export function setupGameHandlers(io, socket) {
 
         if (!room.merdaReactions.find(r => r.id === socket.id)) {
             room.merdaReactions.push({ id: socket.id, timestamp });
+
+            // Broadcast Safe Players
+            io.to(roomId).emit('reaction_update', room.merdaReactions.map(r => r.id));
 
             // If 3 people clicked, end round
             if (room.merdaReactions.length === 3) {
@@ -345,10 +372,19 @@ export function setupGameHandlers(io, socket) {
             p.status = 'waiting';
         });
 
+        // Cleanup
+        clearTimeout(room.merdaTimeout);
+        if (room.dummyHands) {
+            room.dummyHands.forEach(d => {
+                if (d.reactionTimer) clearTimeout(d.reactionTimer);
+            });
+        }
+        delete room.winnerId;
+
         io.to(roomId).emit('round_end', {
             loserId,
             penaltyCard,
-            players: room.players.map(p => ({ id: p.id, name: p.name, chili: p.chili, status: p.status }))
+            players: room.players.map(p => ({ id: p.id, name: p.name, avatar: p.avatar, chili: p.chili, status: p.status }))
         });
     }
 

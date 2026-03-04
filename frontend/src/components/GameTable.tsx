@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Player, Card } from '../App';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User } from 'lucide-react';
+import { User, Check } from 'lucide-react';
 
 interface GameTableProps {
     player: Player | null;
@@ -9,6 +9,7 @@ interface GameTableProps {
     hand: Card[];
     gameState: 'lobby' | 'playing' | 'merda_called';
     winnerId: string | null;
+    reactedPlayers?: string[];
     onPassCard: (cardId: string) => void;
     onMerdaShouted: () => void;
     onMerdaReaction: () => void;
@@ -24,16 +25,18 @@ const getCardImagePath = (suit: string, value: number) => {
 };
 
 const GameTable: React.FC<GameTableProps> = ({
-    player, players, hand, gameState, winnerId,
+    player, players, hand, gameState, winnerId, reactedPlayers = [],
     onPassCard, onMerdaShouted, onMerdaReaction, onLeaveRoom
 }) => {
     const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+    const [hasLocalReacted, setHasLocalReacted] = useState(false);
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
     // Reset selection when hand changes (new turn)
     useEffect(() => {
         setSelectedCardId(null);
-    }, [hand]);
+        setHasLocalReacted(false);
+    }, [hand, gameState]);
 
     // Handle auto-shouting if 4 cards match
     useEffect(() => {
@@ -112,6 +115,32 @@ const GameTable: React.FC<GameTableProps> = ({
                             <div className="absolute -top-1 -right-4 bg-orange-600 border border-white/20 px-1.5 py-0.5 md:px-2 md:py-1 rounded-lg text-[10px] md:text-xs font-bold text-white shadow-xl flex items-center gap-1">
                                 💩 {opp.chili}
                             </div>
+
+                            {/* Stato Reazione (SALVO/MERDA) */}
+                            <AnimatePresence>
+                                {gameState === 'merda_called' && (
+                                    <>
+                                        {winnerId === opp.id && (
+                                            <motion.div
+                                                initial={{ scale: 0, rotate: -20 }}
+                                                animate={{ scale: 1, rotate: 0 }}
+                                                className="absolute -top-6 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded border-2 border-white shadow-lg z-50 uppercase whitespace-nowrap"
+                                            >
+                                                MERDA!
+                                            </motion.div>
+                                        )}
+                                        {reactedPlayers.includes(opp.id) && (
+                                            <motion.div
+                                                initial={{ scale: 0, y: 10 }}
+                                                animate={{ scale: 1, y: 0 }}
+                                                className="absolute -top-6 left-1/2 -translate-x-1/2 bg-green-600 text-white text-[10px] font-black px-2 py-0.5 rounded border-2 border-white shadow-lg z-50 flex items-center gap-1 uppercase whitespace-nowrap"
+                                            >
+                                                <Check className="w-3 h-3" /> SALVO
+                                            </motion.div>
+                                        )}
+                                    </>
+                                )}
+                            </AnimatePresence>
                         </div>
 
                         {/* Fanned Cards (UNO Style) */}
@@ -148,11 +177,14 @@ const GameTable: React.FC<GameTableProps> = ({
                         </motion.button>
                     )}
 
-                    {gameState === 'merda_called' && winnerId !== player.id && (
+                    {gameState === 'merda_called' && winnerId !== player.id && !hasLocalReacted && (
                         <motion.button
                             initial={{ scale: 0, rotate: -180 }}
                             animate={{ scale: 1.2, rotate: 0 }}
-                            onClick={onMerdaReaction}
+                            onClick={() => {
+                                setHasLocalReacted(true);
+                                onMerdaReaction();
+                            }}
                             className="w-40 h-40 md:w-64 md:h-64 rounded-full bg-gradient-to-tr from-orange-600 to-red-600 shadow-[0_0_100px_rgba(234,88,12,0.8)] border-4 border-white flex flex-col items-center justify-center text-white font-black cursor-pointer active:scale-90 transition-transform hover:rotate-12"
                         >
                             <span className="text-2xl md:text-5xl uppercase drop-shadow-lg">SALVATI!</span>
@@ -240,6 +272,28 @@ const GameTable: React.FC<GameTableProps> = ({
                 </p>
 
                 <div className="flex gap-2 sm:gap-4 items-end h-36 sm:h-44 md:h-60 mt-auto">
+                    {/* Badge Personale Salvato */}
+                    <AnimatePresence>
+                        {gameState === 'merda_called' && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0 }}
+                                className="absolute -top-12 left-1/2 -translate-x-1/2 z-50"
+                            >
+                                {winnerId === player.id ? (
+                                    <div className="bg-red-600 text-white font-black px-6 py-2 rounded-xl border-4 border-white shadow-2xl text-xl animate-bounce">
+                                        MERDA!
+                                    </div>
+                                ) : (hasLocalReacted || reactedPlayers.includes(player.id)) && (
+                                    <div className="bg-green-600 text-white font-black px-6 py-2 rounded-xl border-4 border-white shadow-2xl text-xl flex items-center gap-2">
+                                        <Check className="w-6 h-6" /> SEI SALVO!
+                                    </div>
+                                )}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
                     <AnimatePresence>
                         {hand.map((card, i) => {
                             const isSelected = selectedCardId === card.id;
