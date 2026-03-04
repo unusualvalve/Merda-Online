@@ -130,6 +130,7 @@ export function setupGameHandlers(io, socket) {
         }
 
         const N = room.players.length;
+        const maxPlayValue = Math.max(4, N);
 
         // Generate Deck
         const suits = ['Spade', 'Coppe', 'Denari', 'Bastoni'];
@@ -144,8 +145,8 @@ export function setupGameHandlers(io, socket) {
         fullDeck.sort(() => Math.random() - 0.5);
 
         // Split deck dynamically based on N
-        let playDeck = fullDeck.filter(c => c.value >= 1 && c.value <= N);
-        room.penaltyDeck = fullDeck.filter(c => c.value > N);
+        let playDeck = fullDeck.filter(c => c.value >= 1 && c.value <= maxPlayValue);
+        room.penaltyDeck = fullDeck.filter(c => c.value > maxPlayValue);
 
         // Shuffle playdeck again just in case
         playDeck.sort(() => Math.random() - 0.5);
@@ -182,7 +183,7 @@ export function setupGameHandlers(io, socket) {
             io.to(roomId).emit('player_ready', { playerId: player.id });
         }
 
-        // Check if all 4 players are ready
+        // Check if all players are ready
         if (room.players.every(p => p.status === 'ready_to_pass')) {
             // Execute pass
             // Player i passes to Player i-1 (left) cyclicly
@@ -191,8 +192,9 @@ export function setupGameHandlers(io, socket) {
                 return { card: p.selectedCard };
             });
 
+            const N = room.players.length;
             room.players.forEach((p, i) => {
-                const prevPlayerIndex = (i === 0) ? 3 : i - 1;
+                const prevPlayerIndex = (i === 0) ? N - 1 : i - 1;
                 const receivedCard = passedCards[prevPlayerIndex].card;
                 p.hand.push(receivedCard);
                 p.status = 'playing';
@@ -278,10 +280,11 @@ export function setupGameHandlers(io, socket) {
         // If penalty deck is empty, reset it based on N.
         if (room.penaltyDeck.length === 0) {
             const N = room.players.length;
+            const maxPlayValue = Math.max(4, N);
             const suits = ['Spade', 'Coppe', 'Denari', 'Bastoni'];
             let fullDeck = [];
             suits.forEach(suit => {
-                for (let i = N + 1; i <= 10; i++) {
+                for (let i = maxPlayValue + 1; i <= 10; i++) {
                     fullDeck.push({ suit, value: i, id: `${suit}-${i}` });
                 }
             });
