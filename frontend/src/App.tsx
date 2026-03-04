@@ -11,6 +11,7 @@ const socket: Socket = io({
 export type Player = {
   id: string;
   name: string;
+  avatar?: string;
   chili: number;
   status: string;
 };
@@ -121,14 +122,14 @@ function App() {
     };
   }, []);
 
-  const handleJoin = (room: string, name: string) => {
+  const handleJoin = (room: string, name: string, avatar?: string) => {
     setRoomId(room);
     setIsCreator(false);
-    socket.emit('join_room', { roomId: room, playerName: name });
+    socket.emit('join_room', { roomId: room, playerName: name, avatar });
   };
 
-  const handleCreateRoom = (name: string) => {
-    socket.emit('create_room', { playerName: name });
+  const handleCreateRoom = (name: string, avatar?: string) => {
+    socket.emit('create_room', { playerName: name, avatar });
   };
 
   const handleStartGame = () => {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Player, Card } from '../App';
 import { motion, AnimatePresence } from 'framer-motion';
+import { User } from 'lucide-react';
 
 interface GameTableProps {
     player: Player | null;
@@ -46,6 +47,31 @@ const GameTable: React.FC<GameTableProps> = ({
     // La vittoria con 5 carte richiede 4 carte uguali
     const isWinCondition = hand.length >= 4 && hand.some(c => hand.filter(c2 => c2.value === c.value).length === 4);
     const opponents = players.filter(p => p.id !== player.id);
+
+    const getOpponentPosition = (index: number, total: number): React.CSSProperties => {
+        if (total === 1) {
+            return { top: '10%', left: '50%', transform: 'translate(-50%, -50%)' };
+        }
+
+        // Distribute along an arc. Angle from 160 deg to 20 deg (in radians)
+        const startAngle = Math.PI * 0.9;
+        const endAngle = Math.PI * 0.1;
+        const angle = startAngle - (index / (total - 1)) * (startAngle - endAngle);
+
+        const rx = 40;
+        const ry = 60;
+
+        const x = 50 + rx * Math.cos(angle);
+        const y = 80 - ry * Math.sin(angle);
+
+        return {
+            position: 'absolute',
+            top: `${y}%`,
+            left: `${x}%`,
+            transform: 'translate(-50%, -50%)',
+            zIndex: 10
+        };
+    };
 
     const handleCardClick = (cardId: string) => {
         if (gameState !== 'playing' || selectedCardId) return;

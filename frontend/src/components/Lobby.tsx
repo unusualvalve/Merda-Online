@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import type { Player, Card } from '../App';
-import { User, Users, Play } from 'lucide-react';
+import { User, Users, Play, ImagePlus, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface LobbyProps {
-    onJoin: (room: string, name: string) => void;
-    onCreate: (name: string) => void;
+    onJoin: (room: string, name: string, avatar?: string) => void;
+    onCreate: (name: string, avatar?: string) => void;
     roomId: string;
     players: Player[];
     player: Player | null;
@@ -22,13 +22,49 @@ const getCardImagePath = (suit: string, value: number) => {
 const Lobby: React.FC<LobbyProps> = ({ onJoin, onCreate, roomId, players, player, onStart, lastPenalty, onLeaveRoom, isCreator }) => {
     const [inputRoom, setInputRoom] = useState('');
     const [inputName, setInputName] = useState('');
+    const [avatarBase64, setAvatarBase64] = useState<string | undefined>();
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (inputRoom.trim() && inputName.trim()) {
-            onJoin(inputRoom.trim(), inputName.trim());
+            onJoin(inputRoom.trim(), inputName.trim(), avatarBase64);
         }
+    };
+
+    const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_SIZE = 150;
+                let width = img.width;
+                let height = img.height;
+                if (width > height) {
+                    if (width > MAX_SIZE) {
+                        height *= MAX_SIZE / width;
+                        width = MAX_SIZE;
+                    }
+                } else {
+                    if (height > MAX_SIZE) {
+                        width *= MAX_SIZE / height;
+                        height = MAX_SIZE;
+                    }
+                }
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx?.drawImage(img, 0, 0, width, height);
+                setAvatarBase64(canvas.toDataURL('image/jpeg', 0.8));
+            };
+            if (typeof event.target?.result === 'string') {
+                img.src = event.target.result;
+            }
+        };
+        reader.readAsDataURL(file);
     };
 
     return (
@@ -65,6 +101,30 @@ const Lobby: React.FC<LobbyProps> = ({ onJoin, onCreate, roomId, players, player
                 {/* Join Form vs Waiting Room */}
                 {!player ? (
                     <div className="space-y-6">
+                        <div className="flex flex-col items-center gap-4 mb-4">
+                            <label className="relative cursor-pointer group">
+                                <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+                                <div className={`w-24 h-24 rounded-full border-2 ${avatarBase64 ? 'border-green-500' : 'border-white/20 border-dashed group-hover:border-red-500/50'} flex items-center justify-center overflow-hidden bg-black/50 transition-all`}>
+                                    {avatarBase64 ? (
+                                        <img src={avatarBase64} alt="Avatar" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="flex flex-col items-center text-neutral-500 group-hover:text-red-400 transition-colors">
+                                            <ImagePlus className="w-8 h-8 mb-1" />
+                                            <span className="text-[10px] font-bold uppercase tracking-wider">Foto Profilo</span>
+                                        </div>
+                                    )}
+                                </div>
+                                {avatarBase64 && (
+                                    <button
+                                        onClick={(e) => { e.preventDefault(); setAvatarBase64(undefined); }}
+                                        className="absolute -top-1 -right-1 bg-red-500 rounded-full p-1 text-white shadow-lg hover:bg-red-400 transition-colors"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </label>
+                        </div>
+
                         <div>
                             <label className="block text-sm font-medium text-neutral-400 mb-1">Il tuo Nome</label>
                             <div className="relative">
@@ -85,7 +145,7 @@ const Lobby: React.FC<LobbyProps> = ({ onJoin, onCreate, roomId, players, player
                         <div className="pt-4 border-t border-white/10">
                             <button
                                 onClick={() => {
-                                    if (inputName.trim()) onCreate(inputName.trim());
+                                    if (inputName.trim()) onCreate(inputName.trim(), avatarBase64);
                                 }}
                                 disabled={!inputName.trim()}
                                 className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold py-3.5 px-4 rounded-xl shadow-[0_0_20px_rgba(5,150,105,0.3)] transition-all active:scale-[0.98] mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -146,8 +206,12 @@ const Lobby: React.FC<LobbyProps> = ({ onJoin, onCreate, roomId, players, player
                             {players.map((p, i) => (
                                 <div key={p.id} className="flex items-center justify-between bg-black/30 p-3 rounded-lg border border-white/5">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-neutral-800 to-neutral-700 flex items-center justify-center font-bold text-sm border border-white/10">
-                                            {i + 1}
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-neutral-800 to-neutral-700 flex items-center justify-center font-bold text-sm border border-white/10 overflow-hidden shrink-0">
+                                            {p.avatar ? (
+                                                <img src={p.avatar} alt="P" className="w-full h-full object-cover" />
+                                            ) : (
+                                                i + 1
+                                            )}
                                         </div>
                                         <span className={`font-medium ${p.id === player.id ? 'text-red-400' : 'text-neutral-200'}`}>
                                             {p.name} {p.id === player.id && '(Tu)'}

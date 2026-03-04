@@ -43,7 +43,7 @@ export function setupGameHandlers(io, socket) {
     });
 
     // 1. Create and Join Room
-    socket.on('create_room', ({ playerName }) => {
+    socket.on('create_room', ({ playerName, avatar }) => {
         if (socket.roomId) handleLeave();
 
         let roomId;
@@ -61,6 +61,7 @@ export function setupGameHandlers(io, socket) {
         const player = {
             id: socket.id,
             name: playerName || 'Creatore',
+            avatar: avatar || null,
             hand: [],
             chili: 0,
             status: 'waiting'
@@ -79,7 +80,7 @@ export function setupGameHandlers(io, socket) {
         console.log(`[i] Room ${roomId} created by ${player.name}`);
     });
 
-    socket.on('join_room', ({ roomId, playerName }) => {
+    socket.on('join_room', ({ roomId, playerName, avatar }) => {
         if (socket.roomId && socket.roomId !== roomId) handleLeave();
 
         if (!rooms.has(roomId)) {
@@ -104,6 +105,7 @@ export function setupGameHandlers(io, socket) {
         const player = {
             id: socket.id,
             name: playerName || `Player ${room.players.length + 1}`,
+            avatar: avatar || null,
             hand: [],
             chili: 0,
             status: 'waiting'
@@ -182,7 +184,7 @@ export function setupGameHandlers(io, socket) {
         room.players.forEach(p => {
             io.to(p.id).emit('game_started', {
                 hand: p.hand,
-                players: room.players.map(op => ({ id: op.id, name: op.name, chili: op.chili, status: op.status }))
+                players: room.players.map(op => ({ id: op.id, name: op.name, avatar: op.avatar, chili: op.chili, status: op.status }))
             });
         });
     });
