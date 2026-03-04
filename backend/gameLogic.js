@@ -151,7 +151,19 @@ export function setupGameHandlers(io, socket) {
         // Shuffle playdeck again just in case
         playDeck.sort(() => Math.random() - 0.5);
 
-        // Deal 4 cards each
+        // Se N < 4, creiamo N mani fantasma per arrivare a 4 giocatori al tavolo "virtuale"
+        room.dummyHands = [];
+        if (N < 4) {
+            const dummyCount = 4 - N;
+            for (let i = 0; i < dummyCount; i++) {
+                room.dummyHands.push({
+                    id: `dummy-${i}`,
+                    hand: playDeck.splice(0, 4)
+                });
+            }
+        }
+
+        // Deal 4 cards each to real players
         room.players.forEach(p => {
             p.hand = playDeck.splice(0, 4);
             p.status = 'playing';
@@ -185,22 +197,40 @@ export function setupGameHandlers(io, socket) {
 
         // Check if all players are ready
         if (room.players.every(p => p.status === 'ready_to_pass')) {
-            // Execute pass
-            // Player i passes to Player i-1 (left) cyclicly
-            const passedCards = room.players.map(p => {
-                p.hand = p.hand.filter(c => c.id !== p.selectedCard.id);
-                return { card: p.selectedCard };
+            // Uniamo i giocatori reali e i dummy in un unico tavolo virtuale circolare
+            const virtualTable = [
+                ...room.players,
+                ...(room.dummyHands || [])
+            ];
+
+            const totalActors = virtualTable.length; // Sarà almeno 4
+
+            // Per i dummy, scegliamo la carta da passare causalmente
+            if (room.dummyHands && room.dummyHands.length > 0) {
+                room.dummyHands.forEach(dummy => {
+                    const randomIndex = Math.floor(Math.random() * dummy.hand.length);
+                    dummy.selectedCard = dummy.hand[randomIndex];
+                });
+            }
+
+            // Prepariamo l'elenco delle carte passate e puliamo le mani
+            const passedCards = virtualTable.map(actor => {
+                actor.hand = actor.hand.filter(c => c.id !== actor.selectedCard.id);
+                return { card: actor.selectedCard };
             });
 
-            const N = room.players.length;
-            room.players.forEach((p, i) => {
-                const prevPlayerIndex = (i === 0) ? N - 1 : i - 1;
-                const receivedCard = passedCards[prevPlayerIndex].card;
-                p.hand.push(receivedCard);
-                p.status = 'playing';
-                delete p.selectedCard;
+            // Eseguiamo la rotazione per tutti
+            virtualTable.forEach((actor, i) => {
+                const prevActorIndex = (i === 0) ? totalActors - 1 : i - 1;
+                const receivedCard = passedCards[prevActorIndex].card;
+                actor.hand.push(receivedCard);
+                delete actor.selectedCard;
 
-                io.to(p.id).emit('execute_pass', { hand: p.hand });
+                // Modifichiamo lo stato e inviamo aggiornamenti solo ai giocatori reali
+                if (actor.status) {
+                    actor.status = 'playing';
+                    io.to(actor.id).emit('execute_pass', { hand: actor.hand });
+                }
             });
 
             io.to(roomId).emit('turn_started'); // all clear
