@@ -16,10 +16,8 @@ interface LobbyProps {
 }
 
 const getCardImagePath = (suit: string, value: number) => {
-    if (suit.toLowerCase() === 'bastoni' && value <= 5) {
-        return `/cards/bastoni-${value}.jpeg`;
-    }
-    return `/cards/${suit.toLowerCase()}-${value}.png`;
+    const ext = (suit.toLowerCase() === 'bastoni' && value <= 5) ? 'jpeg' : 'png';
+    return `/cards/${suit.toLowerCase()}-${value}.${ext}?v=2`;
 };
 
 const Lobby: React.FC<LobbyProps> = ({ onJoin, onCreate, roomId, players, player, onStart, lastPenalty, onLeaveRoom, isCreator }) => {
