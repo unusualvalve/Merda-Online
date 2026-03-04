@@ -16,6 +16,10 @@ interface GameTableProps {
 }
 
 const getCardImagePath = (suit: string, value: number) => {
+    // Il pack bastoni ha i primi 5 valori in jpeg
+    if (suit.toLowerCase() === 'bastoni' && value <= 5) {
+        return `/cards/bastoni-${value}.jpeg`;
+    }
     return `/cards/${suit.toLowerCase()}-${value}.png`;
 };
 

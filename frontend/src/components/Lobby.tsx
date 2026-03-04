@@ -16,6 +16,9 @@ interface LobbyProps {
 }
 
 const getCardImagePath = (suit: string, value: number) => {
+    if (suit.toLowerCase() === 'bastoni' && value <= 5) {
+        return `/cards/bastoni-${value}.jpeg`;
+    }
     return `/cards/${suit.toLowerCase()}-${value}.png`;
 };
 
