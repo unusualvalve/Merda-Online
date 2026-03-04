@@ -89,8 +89,8 @@ export function setupGameHandlers(io, socket) {
 
         const room = rooms.get(roomId);
 
-        if (room.players.length >= 9) {
-            socket.emit('error', 'Stanza piena. Massimo 9 giocatori.');
+        if (room.players.length >= 8) {
+            socket.emit('error', 'Stanza piena. Massimo 8 giocatori.');
             return;
         }
         if (room.status !== 'waiting') {
@@ -130,7 +130,13 @@ export function setupGameHandlers(io, socket) {
         }
 
         const N = room.players.length;
-        const maxPlayValue = Math.max(4, N);
+        const handSize = N >= 5 ? 5 : 4;
+
+        // Numero totale di carte necessarie per poter distribuire handSize a tutti
+        const requiredCards = N * handSize;
+        // Moltiplichiamo il valore massimo finché non abbiamo abbastanza carte (ogni valore ha 4 semi)
+        // Per N < 4 teniamo fissa la finta rotazione a 1-4 (16 carte), altrimenti copriamo
+        let maxPlayValue = Math.max(4, Math.ceil(requiredCards / 4));
 
         // Generate Deck
         const suits = ['Spade', 'Coppe', 'Denari', 'Bastoni'];
@@ -158,14 +164,14 @@ export function setupGameHandlers(io, socket) {
             for (let i = 0; i < dummyCount; i++) {
                 room.dummyHands.push({
                     id: `dummy-${i}`,
-                    hand: playDeck.splice(0, 4)
+                    hand: playDeck.splice(0, handSize)
                 });
             }
         }
 
-        // Deal 4 cards each to real players
+        // Deal handSize cards each to real players
         room.players.forEach(p => {
-            p.hand = playDeck.splice(0, 4);
+            p.hand = playDeck.splice(0, handSize);
             p.status = 'playing';
         });
 
@@ -246,9 +252,10 @@ export function setupGameHandlers(io, socket) {
         if (!player) return;
 
         // Validate 4 cards of same value
-        if (player.hand.length === 4) {
-            const firstValue = player.hand[0].value;
-            const isWin = player.hand.every(c => c.value === firstValue);
+        // The player hand could be 4 or 5 cards long
+        if (player.hand.length >= 4) {
+            // Find if there is any value that repeats 4 times in the hand
+            const isWin = player.hand.some(c => player.hand.filter(c2 => c2.value === c.value).length === 4);
 
             if (isWin) {
                 room.status = 'merda_called';
@@ -273,7 +280,7 @@ export function setupGameHandlers(io, socket) {
         if (!player) return;
 
         // Verify it's not the winner themselves registering a reaction
-        const winnerId = room.players.find(p => p.hand.length === 4 && p.hand.every(c => c.value === p.hand[0].value))?.id;
+        const winnerId = room.players.find(p => p.hand.some(c => p.hand.filter(c2 => c2.value === c.value).length === 4))?.id;
         if (socket.id === winnerId) return;
 
         if (!room.merdaReactions.find(r => r.id === socket.id)) {
@@ -310,7 +317,8 @@ export function setupGameHandlers(io, socket) {
         // If penalty deck is empty, reset it based on N.
         if (room.penaltyDeck.length === 0) {
             const N = room.players.length;
-            const maxPlayValue = Math.max(4, N);
+            const requiredCards = N * (N >= 5 ? 5 : 4);
+            const maxPlayValue = Math.max(4, Math.ceil(requiredCards / 4));
             const suits = ['Spade', 'Coppe', 'Denari', 'Bastoni'];
             let fullDeck = [];
             suits.forEach(suit => {

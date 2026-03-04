@@ -133,7 +133,7 @@ const Lobby: React.FC<LobbyProps> = ({ onJoin, onCreate, roomId, players, player
                             <div className="flex flex-col items-end gap-2">
                                 <div className="bg-black/30 px-3 py-1 rounded-full border border-white/5 flex items-center gap-2">
                                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                                    <span className="text-sm font-mono text-neutral-300">{players.length}/9 max</span>
+                                    <span className="text-sm font-mono text-neutral-300">{players.length}/8 max</span>
                                 </div>
                                 <button onClick={() => setShowLeaveConfirm(true)} className="text-xs text-red-400 hover:text-red-300 underline underline-offset-2 transition-colors cursor-pointer">
                                     Esci dalla Stanza
@@ -162,11 +162,11 @@ const Lobby: React.FC<LobbyProps> = ({ onJoin, onCreate, roomId, players, player
                             ))}
 
                             {/* Placeholder for empty slots */}
-                            {players.length < 9 && (
+                            {players.length < 8 && (
                                 <div className="flex items-center justify-between border border-dashed border-white/10 p-3 rounded-lg opacity-50">
                                     <div className="flex items-center gap-3">
                                         <div className="w-8 h-8 rounded-full border border-dashed border-white/20 flex items-center justify-center" />
-                                        <span className="text-neutral-500 italic">In attesa di altri giocatori... (Min: 2, Max: 9)</span>
+                                        <span className="text-neutral-500 italic">In attesa di altri giocatori... (Min: 2, Max: 8)</span>
                                     </div>
                                 </div>
                             )}

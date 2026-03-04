@@ -42,7 +42,9 @@ const GameTable: React.FC<GameTableProps> = ({
 
     if (!player) return null;
 
-    const isWinCondition = hand.length === 4 && hand.every(c => c.value === hand[0].value);
+    const handSize = players.length >= 5 ? 5 : 4;
+    // La vittoria con 5 carte richiede 4 carte uguali
+    const isWinCondition = hand.length >= 4 && hand.some(c => hand.filter(c2 => c2.value === c.value).length === 4);
     const opponents = players.filter(p => p.id !== player.id);
 
     const handleCardClick = (cardId: string) => {
@@ -60,9 +62,20 @@ const GameTable: React.FC<GameTableProps> = ({
             {/* Opponents Container */}
             <div className="absolute top-12 md:top-4 left-0 right-0 z-10 flex justify-center gap-2 md:gap-4 px-4 md:px-32 flex-wrap pointer-events-none">
                 {opponents.map(opp => (
-                    <div key={opp.id} className="text-center text-white p-1.5 md:p-2 bg-black/50 rounded-lg md:rounded-xl border border-white/10 backdrop-blur-sm min-w-[70px] md:min-w-[100px] shadow-lg">
-                        <p className="font-bold text-[10px] md:text-sm truncate">{opp.name}</p>
+                    <div key={opp.id} className="text-center text-white p-1.5 md:p-2 bg-black/50 rounded-lg md:rounded-xl border border-white/10 backdrop-blur-sm min-w-[70px] md:min-w-[100px] shadow-lg flex flex-col items-center">
+                        <p className="font-bold text-[10px] md:text-sm truncate w-full">{opp.name}</p>
+                        {/* Only show scores on opponents if mobile scoreboard is hidden, or just keep it for flavor */}
                         <p className="text-[10px] md:text-xs text-orange-400 font-mono mt-0.5">💩 {opp.chili} Kg</p>
+
+                        {/* Opponent Card Backs */}
+                        <div className="flex justify-center -space-x-1.5 sm:-space-x-2 mt-1 sm:mt-2">
+                            {Array.from({ length: handSize }).map((_, i) => (
+                                <div
+                                    key={i}
+                                    className="w-3.5 h-5 sm:w-5 sm:h-7 md:w-6 md:h-9 rounded-sm shadow-sm border border-white/20 bg-gradient-to-br from-blue-700 to-indigo-900"
+                                />
+                            ))}
+                        </div>
                     </div>
                 ))}
             </div>
@@ -148,9 +161,9 @@ const GameTable: React.FC<GameTableProps> = ({
                 )}
             </AnimatePresence>
 
-            {/* Scoreboard Sidebar */}
-            <div className="absolute top-3 right-3 md:top-6 md:right-6 z-40 bg-black/60 backdrop-blur-md p-2 md:p-4 rounded-lg md:rounded-xl border border-white/10 w-32 md:w-48 shadow-2xl">
-                <h3 className="text-white text-[10px] md:text-xs font-bold uppercase tracking-widest mb-2 md:mb-3 pb-1 md:pb-2 border-b border-white/10">Scoreboard</h3>
+            {/* Scoreboard Sidebar (Hidden on mobile) */}
+            <div className="hidden md:block absolute top-6 right-6 z-40 bg-black/60 backdrop-blur-md p-4 rounded-xl border border-white/10 w-48 shadow-2xl">
+                <h3 className="text-white text-xs font-bold uppercase tracking-widest mb-3 pb-2 border-b border-white/10">Scoreboard</h3>
                 <div className="space-y-1 md:space-y-2">
                     {players.map(p => (
                         <div key={p.id} className="flex justify-between items-center text-[10px] md:text-sm">
@@ -182,14 +195,14 @@ const GameTable: React.FC<GameTableProps> = ({
                                 <motion.div
                                     key={card.id}
                                     layoutId={card.id}
-                                    initial={{ y: 50, opacity: 0 }}
+                                    initial={{ y: -100, opacity: 0, scale: 0.8 }}
                                     animate={{
-                                        y: isSelected ? -20 : 0,
+                                        y: isSelected ? -30 : 0,
                                         opacity: 1,
                                         scale: isSelected ? 1.05 : 1,
                                     }}
-                                    whileHover={!selectedCardId && gameState === 'playing' ? { y: -10, rotate: (i - 1.5) * 2 } : {}}
-                                    exit={{ y: -100, x: -100, opacity: 0, scale: 0.5 }}
+                                    whileHover={!selectedCardId && gameState === 'playing' ? { y: -15, rotate: (i - 2) * 2 } : {}}
+                                    exit={{ y: -200, opacity: 0, scale: 0.5, transition: { duration: 0.3 } }}
                                     onClick={() => handleCardClick(card.id)}
                                     className={`relative w-16 h-28 sm:w-20 sm:h-32 md:w-32 md:h-52 lg:w-40 lg:h-60 bg-transparent rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all 
                                         ${isSelected ? 'shadow-[0_0_20px_rgba(255,255,255,0.4)] ring-2 md:ring-4 ring-white z-50' : 'hover:shadow-xl md:hover:shadow-2xl'}
