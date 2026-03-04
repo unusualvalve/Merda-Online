@@ -60,8 +60,8 @@ export function setupGameHandlers(io, socket) {
 
         const room = rooms.get(roomId);
 
-        if (room.players.length >= 8) {
-            socket.emit('error', 'Stanza piena. Massimo 8 giocatori.');
+        if (room.players.length >= 4) {
+            socket.emit('error', 'Stanza piena. Massimo 4 giocatori.');
             return;
         }
 
@@ -83,9 +83,8 @@ export function setupGameHandlers(io, socket) {
         const room = rooms.get(roomId);
         if (!room) return;
 
-        const N = room.players.length;
-        if (N < 2) {
-            socket.emit('error', 'Servono almeno 2 giocatori per iniziare la partita.');
+        if (room.players.length !== 4) {
+            socket.emit('error', 'Servono 4 giocatori per iniziare la partita.');
             return;
         }
 
@@ -101,9 +100,9 @@ export function setupGameHandlers(io, socket) {
         // Shuffle
         fullDeck.sort(() => Math.random() - 0.5);
 
-        // Split deck dynamically based on N
-        let playDeck = fullDeck.filter(c => c.value >= 1 && c.value <= N);
-        room.penaltyDeck = fullDeck.filter(c => c.value > N);
+        // Split deck
+        let playDeck = fullDeck.filter(c => c.value >= 1 && c.value <= 4);
+        room.penaltyDeck = fullDeck.filter(c => c.value > 4);
 
         // Shuffle playdeck again just in case
         playDeck.sort(() => Math.random() - 0.5);
@@ -140,7 +139,7 @@ export function setupGameHandlers(io, socket) {
             io.to(roomId).emit('player_ready', { playerId: player.id });
         }
 
-        // Check if all players are ready
+        // Check if all 4 players are ready
         if (room.players.every(p => p.status === 'ready_to_pass')) {
             // Execute pass
             // Player i passes to Player i-1 (left) cyclicly
@@ -150,7 +149,7 @@ export function setupGameHandlers(io, socket) {
             });
 
             room.players.forEach((p, i) => {
-                const prevPlayerIndex = (i === 0) ? (room.players.length - 1) : i - 1;
+                const prevPlayerIndex = (i === 0) ? 3 : i - 1;
                 const receivedCard = passedCards[prevPlayerIndex].card;
                 p.hand.push(receivedCard);
                 p.status = 'playing';
@@ -205,9 +204,8 @@ export function setupGameHandlers(io, socket) {
         if (!room.merdaReactions.find(r => r.id === socket.id)) {
             room.merdaReactions.push({ id: socket.id, timestamp });
 
-            // If N-1 people clicked, end round
-            const N = room.players.length;
-            if (room.merdaReactions.length === (N - 1)) {
+            // If 3 people clicked, end round
+            if (room.merdaReactions.length === 3) {
                 clearTimeout(room.merdaTimeout);
                 handleRoundEnd(roomId, io);
             }
@@ -234,13 +232,12 @@ export function setupGameHandlers(io, socket) {
 
         const loser = room.players.find(p => p.id === loserId);
 
-        // If penalty deck is empty, reset it dynamically based on N
+        // If penalty deck is empty, reset it.
         if (room.penaltyDeck.length === 0) {
-            const N = room.players.length;
             const suits = ['Spade', 'Coppe', 'Denari', 'Bastoni'];
             let fullDeck = [];
             suits.forEach(suit => {
-                for (let i = N + 1; i <= 10; i++) {
+                for (let i = 5; i <= 10; i++) {
                     fullDeck.push({ suit, value: i, id: `${suit}-${i}` });
                 }
             });

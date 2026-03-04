@@ -109,17 +109,6 @@ function App() {
     socket.emit('join_room', { roomId: room, playerName: name });
   };
 
-  const handleCreateLobby = (name: string) => {
-    // Generate 5 char alphanumeric code
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let newRoomId = '';
-    for (let i = 0; i < 5; i++) {
-      newRoomId += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    setRoomId(newRoomId);
-    socket.emit('join_room', { roomId: newRoomId, playerName: name, isHost: true });
-  };
-
   const handleStartGame = () => {
     socket.emit('start_game', roomId);
   };
@@ -162,7 +151,6 @@ function App() {
       {gameState === 'lobby' ? (
         <Lobby
           onJoin={handleJoin}
-          onCreate={handleCreateLobby}
           roomId={roomId}
           players={players}
           player={player}

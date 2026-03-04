@@ -44,6 +44,10 @@ const GameTable: React.FC<GameTableProps> = ({
 
     const isWinCondition = hand.length === 4 && hand.every(c => c.value === hand[0].value);
     const opponents = players.filter(p => p.id !== player.id);
+    // Simple mapping: 0 -> Left, 1 -> Top, 2 -> Right
+    const leftOpponent = opponents[0];
+    const topOpponent = opponents[1];
+    const rightOpponent = opponents[2];
 
     const handleCardClick = (cardId: string) => {
         if (gameState !== 'playing' || selectedCardId) return;
@@ -57,19 +61,28 @@ const GameTable: React.FC<GameTableProps> = ({
             <div className="absolute inset-0 border-[10px] md:border-[20px] border-amber-900/50 rounded-2xl md:rounded-3xl m-2 md:m-4 pointer-events-none mix-blend-overlay shadow-inner z-0" />
             <div className="absolute inset-[20px] md:inset-[40px] border-2 border-white/5 rounded-xl pointer-events-none z-0" />
 
-            {/* Dynamic Opponents Row (Top/Sides) */}
-            <div className="relative z-10 flex-1 flex flex-col justify-start pt-16 md:pt-20 px-4 md:px-12 pointer-events-none">
-                <div className="flex flex-wrap justify-center gap-4 md:gap-8 w-full">
-                    {opponents.map((opp) => (
-                        <div key={opp.id} className="text-center text-white p-2 md:p-3 bg-black/40 rounded-xl border border-white/10 backdrop-blur-sm min-w-[80px] md:min-w-[120px]">
-                            <p className="font-bold text-xs md:text-base truncate">{opp.name}</p>
-                            <p className="text-[10px] md:text-xs text-orange-400 font-mono mt-1">💩 {opp.chili} Kg</p>
-                            {opp.status === 'ready_to_pass' && (
-                                <p className="text-[9px] md:text-[10px] text-green-400 mt-1 uppercase tracking-wider">Pronto</p>
-                            )}
-                        </div>
-                    ))}
-                </div>
+            {/* Top and Sides Opponents */}
+            <div className="relative z-10 flex-1 flex flex-col">
+                {topOpponent && (
+                    <div className="absolute top-2 md:top-4 left-1/2 -translate-x-1/2 text-center text-white p-2 md:p-3 bg-black/40 rounded-xl border border-white/10 backdrop-blur-sm">
+                        <p className="font-bold text-xs md:text-base">{topOpponent.name}</p>
+                        <p className="text-[10px] md:text-xs text-orange-400">💩 {topOpponent.chili} Kg</p>
+                    </div>
+                )}
+
+                {leftOpponent && (
+                    <div className="absolute top-1/2 left-0 md:left-8 -translate-y-1/2 rotate-90 md:rotate-0 origin-left md:origin-center text-center text-white p-2 md:p-3 bg-black/40 rounded-xl border border-white/10 backdrop-blur-sm ml-2 md:ml-0 overflow-hidden text-ellipsis whitespace-nowrap max-w-[100px] md:max-w-none">
+                        <p className="font-bold text-xs md:text-base">{leftOpponent.name}</p>
+                        <p className="text-[10px] md:text-xs text-orange-400">💩 {leftOpponent.chili} Kg</p>
+                    </div>
+                )}
+
+                {rightOpponent && (
+                    <div className="absolute top-1/2 right-0 md:right-8 -translate-y-1/2 -rotate-90 md:rotate-0 origin-right md:origin-center text-center text-white p-2 md:p-3 bg-black/40 rounded-xl border border-white/10 backdrop-blur-sm mr-2 md:mr-0 overflow-hidden text-ellipsis whitespace-nowrap max-w-[100px] md:max-w-none">
+                        <p className="font-bold text-xs md:text-base">{rightOpponent.name}</p>
+                        <p className="text-[10px] md:text-xs text-orange-400">💩 {rightOpponent.chili} Kg</p>
+                    </div>
+                )}
             </div>
 
             {/* Center of the Table (Reaction / Shout Buttons) */}
