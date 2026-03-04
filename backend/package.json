@@ -1,0 +1,18 @@
+{
+  "name": "merda_online_backend",
+  "version": "1.0.0",
+  "description": "Backend for Merda Online",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "build": "npm install && cd ../frontend && npm install && npm run build"
+  },
+  "dependencies": {
+    "canvas": "^3.2.1",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "socket.io": "^4.7.4"
+  }
+}
