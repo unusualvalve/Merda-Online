@@ -42,28 +42,64 @@ export function setupGameHandlers(io, socket) {
         handleLeave();
     });
 
-    // 1. Join Room
-    socket.on('join_room', ({ roomId, playerName }) => {
-        if (socket.roomId && socket.roomId !== roomId) {
-            handleLeave();
-        }
+    // 1. Create and Join Room
+    socket.on('create_room', ({ playerName }) => {
+        if (socket.roomId) handleLeave();
+
+        let roomId;
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        do {
+            roomId = '';
+            for (let i = 0; i < 5; i++) {
+                roomId += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+        } while (rooms.has(roomId));
+
         socket.join(roomId);
         socket.roomId = roomId;
 
+        const player = {
+            id: socket.id,
+            name: playerName || 'Creatore',
+            hand: [],
+            chili: 0,
+            status: 'waiting'
+        };
+
+        rooms.set(roomId, {
+            id: roomId,
+            creatorId: socket.id,
+            players: [player],
+            status: 'waiting',
+        });
+
+        const room = rooms.get(roomId);
+        socket.emit('room_created', roomId);
+        io.to(roomId).emit('room_update', room.players);
+        console.log(`[i] Room ${roomId} created by ${player.name}`);
+    });
+
+    socket.on('join_room', ({ roomId, playerName }) => {
+        if (socket.roomId && socket.roomId !== roomId) handleLeave();
+
         if (!rooms.has(roomId)) {
-            rooms.set(roomId, {
-                id: roomId,
-                players: [],
-                status: 'waiting', // waiting, playing, merda_called
-            });
+            socket.emit('error', 'Stanza non trovata. Controlla il codice.');
+            return;
         }
 
         const room = rooms.get(roomId);
 
-        if (room.players.length >= 4) {
-            socket.emit('error', 'Stanza piena. Massimo 4 giocatori.');
+        if (room.players.length >= 9) {
+            socket.emit('error', 'Stanza piena. Massimo 9 giocatori.');
             return;
         }
+        if (room.status !== 'waiting') {
+            socket.emit('error', 'La partita è già iniziata.');
+            return;
+        }
+
+        socket.join(roomId);
+        socket.roomId = roomId;
 
         const player = {
             id: socket.id,
@@ -83,10 +119,17 @@ export function setupGameHandlers(io, socket) {
         const room = rooms.get(roomId);
         if (!room) return;
 
-        if (room.players.length !== 4) {
-            socket.emit('error', 'Servono 4 giocatori per iniziare la partita.');
+        if (room.creatorId !== socket.id) {
+            socket.emit('error', 'Solo il creatore può avviare la partita.');
             return;
         }
+
+        if (room.players.length < 2) {
+            socket.emit('error', 'Servono almeno 2 giocatori per iniziare la partita.');
+            return;
+        }
+
+        const N = room.players.length;
 
         // Generate Deck
         const suits = ['Spade', 'Coppe', 'Denari', 'Bastoni'];
@@ -100,9 +143,9 @@ export function setupGameHandlers(io, socket) {
         // Shuffle
         fullDeck.sort(() => Math.random() - 0.5);
 
-        // Split deck
-        let playDeck = fullDeck.filter(c => c.value >= 1 && c.value <= 4);
-        room.penaltyDeck = fullDeck.filter(c => c.value > 4);
+        // Split deck dynamically based on N
+        let playDeck = fullDeck.filter(c => c.value >= 1 && c.value <= N);
+        room.penaltyDeck = fullDeck.filter(c => c.value > N);
 
         // Shuffle playdeck again just in case
         playDeck.sort(() => Math.random() - 0.5);
@@ -232,12 +275,13 @@ export function setupGameHandlers(io, socket) {
 
         const loser = room.players.find(p => p.id === loserId);
 
-        // If penalty deck is empty, reset it.
+        // If penalty deck is empty, reset it based on N.
         if (room.penaltyDeck.length === 0) {
+            const N = room.players.length;
             const suits = ['Spade', 'Coppe', 'Denari', 'Bastoni'];
             let fullDeck = [];
             suits.forEach(suit => {
-                for (let i = 5; i <= 10; i++) {
+                for (let i = N + 1; i <= 10; i++) {
                     fullDeck.push({ suit, value: i, id: `${suit}-${i}` });
                 }
             });
@@ -245,11 +289,9 @@ export function setupGameHandlers(io, socket) {
             room.penaltyDeck = fullDeck;
         }
 
-        const penaltyCard = room.penaltyDeck.pop();
-        if (penaltyCard.value === 7 && penaltyCard.suit === 'Denari') {
+        const penaltyCard = room.penaltyDeck.pop() || { suit: 'Denari', value: 1 };
+        if ((penaltyCard.value === 7 || penaltyCard.value === 10) && penaltyCard.suit === 'Denari') {
             loser.chili = 0;
-        } else if (penaltyCard.value === 10 && penaltyCard.suit === 'Denari') {
-            loser.chili = Math.max(0, loser.chili - 10);
         } else {
             loser.chili += penaltyCard.value;
         }

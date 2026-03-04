@@ -30,6 +30,7 @@ function App() {
   const [errorMsg, setErrorMsg] = useState('');
   const [winnerId, setWinnerId] = useState<string | null>(null);
   const [lastPenalty, setLastPenalty] = useState<{ card: Card, loserId: string } | null>(null);
+  const [isCreator, setIsCreator] = useState(false);
 
   useEffect(() => {
     socket.connect();
@@ -41,6 +42,11 @@ function App() {
       setPlayers(roomPlayers);
       const me = roomPlayers.find(p => p.id === socket.id);
       if (me) setPlayer(me);
+    });
+
+    socket.on('room_created', (newRoomId: string) => {
+      setRoomId(newRoomId);
+      setIsCreator(true);
     });
 
     socket.on('game_started', ({ hand, players }) => {
@@ -101,12 +107,18 @@ function App() {
       socket.off('round_end');
       socket.off('game_canceled');
       socket.off('error');
+      socket.off('room_created');
     };
   }, []);
 
   const handleJoin = (room: string, name: string) => {
     setRoomId(room);
+    setIsCreator(false);
     socket.emit('join_room', { roomId: room, playerName: name });
+  };
+
+  const handleCreateRoom = (name: string) => {
+    socket.emit('create_room', { playerName: name });
   };
 
   const handleStartGame = () => {
@@ -133,6 +145,7 @@ function App() {
     setGameState('lobby');
     setHand([]);
     setLastPenalty(null);
+    setIsCreator(false);
     setErrorMsg('Hai abbandonato la partita');
     setTimeout(() => setErrorMsg(''), 5000);
   };
@@ -151,12 +164,14 @@ function App() {
       {gameState === 'lobby' ? (
         <Lobby
           onJoin={handleJoin}
+          onCreate={handleCreateRoom}
           roomId={roomId}
           players={players}
           player={player}
           onStart={handleStartGame}
           lastPenalty={lastPenalty}
           onLeaveRoom={handleLeaveRoom}
+          isCreator={isCreator}
         />
       ) : (
         <GameTable

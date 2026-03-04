@@ -5,20 +5,22 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 interface LobbyProps {
     onJoin: (room: string, name: string) => void;
+    onCreate: (name: string) => void;
     roomId: string;
     players: Player[];
     player: Player | null;
     onStart: () => void;
     lastPenalty: { card: Card; loserId: string } | null;
     onLeaveRoom: () => void;
+    isCreator: boolean;
 }
 
 const getCardImagePath = (suit: string, value: number) => {
     return `/cards/${suit.toLowerCase()}-${value}.png`;
 };
 
-const Lobby: React.FC<LobbyProps> = ({ onJoin, roomId, players, player, onStart, lastPenalty, onLeaveRoom }) => {
-    const [inputRoom, setInputRoom] = useState(roomId || 'Stanza1');
+const Lobby: React.FC<LobbyProps> = ({ onJoin, onCreate, roomId, players, player, onStart, lastPenalty, onLeaveRoom, isCreator }) => {
+    const [inputRoom, setInputRoom] = useState('');
     const [inputName, setInputName] = useState('');
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
@@ -62,7 +64,7 @@ const Lobby: React.FC<LobbyProps> = ({ onJoin, roomId, players, player, onStart,
 
                 {/* Join Form vs Waiting Room */}
                 {!player ? (
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-6">
                         <div>
                             <label className="block text-sm font-medium text-neutral-400 mb-1">Il tuo Nome</label>
                             <div className="relative">
@@ -74,46 +76,64 @@ const Lobby: React.FC<LobbyProps> = ({ onJoin, roomId, players, player, onStart,
                                     maxLength={12}
                                     value={inputName}
                                     onChange={e => setInputName(e.target.value)}
-                                    className="w-full bg-black/50 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all"
+                                    className="w-full bg-black/50 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all font-bold"
                                     placeholder="Es. Ciro"
                                 />
                             </div>
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-neutral-400 mb-1">Codice Stanza</label>
-                            <div className="relative">
-                                <Users className="absolute left-3 top-3.5 w-5 h-5 text-neutral-500" />
-                                <input
-                                    required
-                                    type="text"
-                                    maxLength={10}
-                                    value={inputRoom}
-                                    onChange={e => setInputRoom(e.target.value.toUpperCase())}
-                                    className="w-full bg-black/50 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all uppercase"
-                                    placeholder="Es. STANZA1"
-                                />
-                            </div>
-                        </div>
+                        <div className="pt-4 border-t border-white/10">
+                            <button
+                                onClick={() => {
+                                    if (inputName.trim()) onCreate(inputName.trim());
+                                }}
+                                disabled={!inputName.trim()}
+                                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold py-3.5 px-4 rounded-xl shadow-[0_0_20px_rgba(5,150,105,0.3)] transition-all active:scale-[0.98] mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Crea Nuova Stanza
+                            </button>
 
-                        <button
-                            type="submit"
-                            className="w-full mt-4 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-bold py-3.5 px-4 rounded-xl shadow-[0_0_20px_rgba(220,38,38,0.3)] transition-all active:scale-[0.98]"
-                        >
-                            Entra nella Stanza
-                        </button>
-                    </form>
+                            <div className="relative flex items-center mb-4">
+                                <div className="flex-grow border-t border-white/10"></div>
+                                <span className="flex-shrink-0 mx-4 text-neutral-500 text-sm">OPPURE</span>
+                                <div className="flex-grow border-t border-white/10"></div>
+                            </div>
+
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                <div>
+                                    <div className="relative">
+                                        <Users className="absolute left-3 top-3.5 w-5 h-5 text-neutral-500" />
+                                        <input
+                                            type="text"
+                                            maxLength={5}
+                                            value={inputRoom}
+                                            onChange={e => setInputRoom(e.target.value.toUpperCase())}
+                                            className="w-full bg-black/50 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all uppercase font-mono tracking-widest font-bold"
+                                            placeholder="CODICE (es. A9K2M)"
+                                        />
+                                    </div>
+                                </div>
+                                <button
+                                    type="submit"
+                                    disabled={!inputRoom.trim() || !inputName.trim()}
+                                    className="w-full bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-bold py-3.5 px-4 rounded-xl shadow-[0_0_20px_rgba(220,38,38,0.3)] transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Unisci a Stanza
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 ) : (
                     <div className="space-y-6">
                         <div className="flex justify-between items-center border-b border-white/10 pb-4">
                             <div>
-                                <p className="text-xs md:text-sm text-neutral-400">Stanza Attuale</p>
-                                <h2 className="text-xl md:text-2xl font-bold tracking-widest text-white">{roomId}</h2>
+                                <p className="text-xs md:text-sm text-neutral-400 mb-1">Codice Stanza</p>
+                                <h2 className="text-3xl md:text-4xl font-black tracking-[0.2em] text-white font-mono">{roomId}</h2>
                             </div>
                             <div className="flex flex-col items-end gap-2">
                                 <div className="bg-black/30 px-3 py-1 rounded-full border border-white/5 flex items-center gap-2">
                                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                                    <span className="text-sm font-mono text-neutral-300">{players.length}/4</span>
+                                    <span className="text-sm font-mono text-neutral-300">{players.length}/9 max</span>
                                 </div>
                                 <button onClick={() => setShowLeaveConfirm(true)} className="text-xs text-red-400 hover:text-red-300 underline underline-offset-2 transition-colors cursor-pointer">
                                     Esci dalla Stanza
@@ -141,28 +161,29 @@ const Lobby: React.FC<LobbyProps> = ({ onJoin, roomId, players, player, onStart,
                                 </div>
                             ))}
 
-                            {/* Placeholders for empty slots */}
-                            {Array.from({ length: 4 - players.length }).map((_, i) => (
-                                <div key={`empty-${i}`} className="flex items-center justify-between border border-dashed border-white/10 p-3 rounded-lg opacity-50">
+                            {/* Placeholder for empty slots */}
+                            {players.length < 9 && (
+                                <div className="flex items-center justify-between border border-dashed border-white/10 p-3 rounded-lg opacity-50">
                                     <div className="flex items-center gap-3">
                                         <div className="w-8 h-8 rounded-full border border-dashed border-white/20 flex items-center justify-center" />
-                                        <span className="text-neutral-500 italic">In attesa...</span>
+                                        <span className="text-neutral-500 italic">In attesa di altri giocatori... (Min: 2, Max: 9)</span>
                                     </div>
                                 </div>
-                            ))}
+                            )}
                         </div>
 
-                        {players.length === 4 ? (
+                        {isCreator ? (
                             <button
                                 onClick={onStart}
-                                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold py-4 px-4 rounded-xl shadow-[0_0_20px_rgba(5,150,105,0.4)] transition-all active:scale-[0.98]"
+                                disabled={players.length < 2}
+                                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold py-4 px-4 rounded-xl shadow-[0_0_20px_rgba(5,150,105,0.4)] transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <Play className="w-5 h-5 fill-current" />
-                                INIZIA PARTITA
+                                {players.length < 2 ? 'ATTESA GIOCATORI...' : 'INIZIA PARTITA'}
                             </button>
                         ) : (
-                            <p className="text-center text-sm text-neutral-400 italic">
-                                La partita inizierà quando ci saranno 4 giocatori.
+                            <p className="text-center text-sm font-bold text-neutral-400 italic bg-black/30 p-4 rounded-xl border border-white/5">
+                                In attesa che l'organizzatore avvii la partita...
                             </p>
                         )}
                     </div>
