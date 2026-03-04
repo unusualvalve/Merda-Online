@@ -50,19 +50,19 @@ const GameTable: React.FC<GameTableProps> = ({
 
     const getOpponentPosition = (index: number, total: number): React.CSSProperties => {
         if (total === 1) {
-            return { top: '10%', left: '50%', transform: 'translate(-50%, -50%)' };
+            return { top: '15%', left: '50%', transform: 'translate(-50%, -50%)' };
         }
 
-        // Distribute along an arc. Angle from 160 deg to 20 deg (in radians)
-        const startAngle = Math.PI * 0.9;
-        const endAngle = Math.PI * 0.1;
+        // Distribute along an arc. Angle from 170 deg to 10 deg (in radians)
+        const startAngle = Math.PI * 0.95;
+        const endAngle = Math.PI * 0.05;
         const angle = startAngle - (index / (total - 1)) * (startAngle - endAngle);
 
         const rx = 40;
         const ry = 60;
 
         const x = 50 + rx * Math.cos(angle);
-        const y = 80 - ry * Math.sin(angle);
+        const y = 85 - ry * Math.sin(angle);
 
         return {
             position: 'absolute',
@@ -85,20 +85,43 @@ const GameTable: React.FC<GameTableProps> = ({
             <div className="absolute inset-0 border-[10px] md:border-[20px] border-amber-900/50 rounded-2xl md:rounded-3xl m-2 md:m-4 pointer-events-none mix-blend-overlay shadow-inner z-0" />
             <div className="absolute inset-[20px] md:inset-[40px] border-2 border-white/5 rounded-xl pointer-events-none z-0" />
 
-            {/* Opponents Container */}
-            <div className="absolute top-12 md:top-4 left-0 right-0 z-10 flex justify-center gap-2 md:gap-4 px-4 md:px-32 flex-wrap pointer-events-none">
-                {opponents.map(opp => (
-                    <div key={opp.id} className="text-center text-white p-1.5 md:p-2 bg-black/50 rounded-lg md:rounded-xl border border-white/10 backdrop-blur-sm min-w-[70px] md:min-w-[100px] shadow-lg flex flex-col items-center">
-                        <p className="font-bold text-[10px] md:text-sm truncate w-full">{opp.name}</p>
-                        {/* Only show scores on opponents if mobile scoreboard is hidden, or just keep it for flavor */}
-                        <p className="text-[10px] md:text-xs text-orange-400 font-mono mt-0.5">💩 {opp.chili} Kg</p>
+            {/* Opponents Container (Circular Layout) */}
+            <div className="absolute inset-0 pointer-events-none z-10">
+                {opponents.map((opp, index) => (
+                    <div key={opp.id} style={getOpponentPosition(index, opponents.length)} className="flex flex-col items-center">
+                        <div className="relative text-center">
+                            {/* Avatar Circolare */}
+                            <div className="w-14 h-14 md:w-20 md:h-20 rounded-full border-2 border-white/30 overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.8)] bg-neutral-800 flex items-center justify-center shrink-0">
+                                {opp.avatar ? (
+                                    <img src={opp.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                                ) : (
+                                    <User className="w-8 h-8 text-neutral-500" />
+                                )}
+                            </div>
 
-                        {/* Opponent Card Backs */}
-                        <div className="flex justify-center -space-x-1.5 sm:-space-x-2 mt-1 sm:mt-2">
+                            {/* Nome (Badge) */}
+                            <div className="absolute -bottom-2 md:-bottom-3 left-1/2 -translate-x-1/2 bg-black/90 border border-white/10 px-2 py-0.5 md:px-4 md:py-1 rounded-full backdrop-blur-md whitespace-nowrap shadow-xl">
+                                <p className="font-bold text-[10px] md:text-xs text-white tracking-widest uppercase">{opp.name}</p>
+                            </div>
+
+                            {/* Chili Merda Badge */}
+                            <div className="absolute -top-1 -right-4 bg-orange-600 border border-white/20 px-1.5 py-0.5 md:px-2 md:py-1 rounded-lg text-[10px] md:text-xs font-bold text-white shadow-xl flex items-center gap-1">
+                                💩 {opp.chili}
+                            </div>
+                        </div>
+
+                        {/* Fanned Cards (UNO Style) */}
+                        <div className="flex justify-center -space-x-3 md:-space-x-5 mt-4 md:mt-10">
                             {Array.from({ length: handSize }).map((_, i) => (
-                                <div
+                                <motion.div
                                     key={i}
-                                    className="w-3.5 h-5 sm:w-5 sm:h-7 md:w-6 md:h-9 rounded-sm shadow-sm border border-white/20 bg-gradient-to-br from-blue-700 to-indigo-900"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    style={{
+                                        transform: `rotate(${(i - (handSize - 1) / 2) * 15}deg) translateY(${Math.abs(i - (handSize - 1) / 2) * 4}px)`,
+                                        transformOrigin: 'bottom center'
+                                    }}
+                                    className="w-6 h-9 md:w-10 md:h-15 rounded-md shadow-[0_0_15px_rgba(0,0,0,1)] border border-white/20 bg-gradient-to-br from-red-600 to-red-950"
                                 />
                             ))}
                         </div>
