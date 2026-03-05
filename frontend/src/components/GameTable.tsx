@@ -36,38 +36,30 @@ const GameTable: React.FC<GameTableProps> = ({
         setHasLocalReacted(false);
     }, [hand, gameState]);
 
-    // Handle auto-shouting if 4 cards match
-    useEffect(() => {
-        if (hand.length === 4) {
-            const firstVal = hand[0].value;
-            hand.every(c => c.value === firstVal);
-            // Wait for user to shout? Our specs say "Applica pulsante grosso, il giocatore DEVE cliccarlo"
-            // So we don't auto shout, we just show a button for them to trigger it.
-        }
-    }, [hand]);
-
     if (!player) return null;
 
     const handSize = players.length >= 5 ? 5 : 4;
-    // La vittoria con 5 carte richiede 4 carte uguali
     const isWinCondition = hand.length >= 4 && hand.some(c => hand.filter(c2 => c2.value === c.value).length === 4);
     const opponents = players.filter(p => p.id !== player.id);
 
     const getOpponentPosition = (index: number, total: number): React.CSSProperties => {
+        // Distribute strictly around the top arc (180 to 0 degrees)
+        // With some padding for the sides.
+        const startAngle = Math.PI * 1.05; // Slightly below the left side
+        const endAngle = -Math.PI * 0.05;  // Slightly below the right side
+
+        let angle;
         if (total === 1) {
-            return { top: '15%', left: '50%', transform: 'translate(-50%, -50%)' };
+            angle = Math.PI / 2; // Top center
+        } else {
+            angle = startAngle - (index / (total - 1)) * (startAngle - endAngle);
         }
 
-        // Distribute along an arc. Angle from 170 deg to 10 deg (in radians)
-        const startAngle = Math.PI * 0.95;
-        const endAngle = Math.PI * 0.05;
-        const angle = startAngle - (index / (total - 1)) * (startAngle - endAngle);
-
-        const rx = 40;
-        const ry = 60;
+        const rx = 42; // Horizontal radius (%)
+        const ry = 45; // Vertical radius (%)
 
         const x = 50 + rx * Math.cos(angle);
-        const y = 85 - ry * Math.sin(angle);
+        const y = 50 - ry * Math.sin(angle); // Inverse Y for top distribution
 
         return {
             position: 'absolute',
@@ -85,12 +77,15 @@ const GameTable: React.FC<GameTableProps> = ({
     };
 
     return (
-        <div className="relative w-full h-screen bg-[#1c3a26] overflow-hidden flex flex-col justify-between p-4 isolate">
+        <div className="relative w-full h-screen bg-[#1c3a26] overflow-hidden flex flex-col justify-between items-center p-4 isolate">
             {/* Table Texture/Border */}
             <div className="absolute inset-0 border-[10px] md:border-[20px] border-amber-900/50 rounded-2xl md:rounded-3xl m-2 md:m-4 pointer-events-none mix-blend-overlay shadow-inner z-0" />
             <div className="absolute inset-[20px] md:inset-[40px] border-2 border-white/5 rounded-xl pointer-events-none z-0" />
 
-            {/* Opponents Container (Circular Layout) */}
+            {/* Central Table Decoration */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 md:w-96 md:h-96 border border-white/5 rounded-full pointer-events-none" />
+
+            {/* Opponents Container (Circular/Edge Layout) */}
             <div className="absolute inset-0 pointer-events-none z-10">
                 {opponents.map((opp, index) => (
                     <div key={opp.id} style={getOpponentPosition(index, opponents.length)} className="flex flex-col items-center">
@@ -142,7 +137,7 @@ const GameTable: React.FC<GameTableProps> = ({
                         </div>
 
                         {/* Fanned Cards (UNO Style) */}
-                        <div className="flex justify-center -space-x-3 md:-space-x-5 mt-4 md:mt-10">
+                        <div className="flex justify-center -space-x-3 md:-space-x-5 mt-4 md:mt-10 scale-75 md:scale-100">
                             {Array.from({ length: handSize }).map((_, i) => (
                                 <motion.div
                                     key={i}
@@ -160,6 +155,40 @@ const GameTable: React.FC<GameTableProps> = ({
                 ))}
             </div>
 
+            {/* Top Bar / Center Indicators */}
+            <div className="relative z-30 pt-4 flex flex-col items-center gap-4">
+                <AnimatePresence>
+                    {gameState === 'playing' && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-black/40 px-4 py-1.5 rounded-full border border-white/10 backdrop-blur-md shadow-lg"
+                        >
+                            <p className="text-white text-[10px] md:text-xs font-bold uppercase tracking-widest">
+                                {selectedCardId ? 'In attesa del turno...' : 'Scegli la carta da passare'}
+                            </p>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Scoreboard Sidebar (Minimal on desktop, hidden on mobile) */}
+                <div className="hidden lg:block absolute top-0 -right-72 bg-black/60 backdrop-blur-md p-4 rounded-xl border border-white/10 w-48 shadow-2xl">
+                    <h3 className="text-white text-xs font-bold uppercase tracking-widest mb-3 pb-2 border-b border-white/10">Scoreboard</h3>
+                    <div className="space-y-2">
+                        {players.map(p => (
+                            <div key={p.id} className="flex justify-between items-center text-sm">
+                                <span className={`truncate mr-2 ${p.id === player.id ? 'text-white font-bold' : 'text-neutral-400'}`}>
+                                    {p.name}
+                                </span>
+                                <span className="text-orange-400 font-mono font-bold bg-orange-500/10 px-1.5 rounded">
+                                    {p.chili}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
             {/* Center of the Table (Reaction / Shout Buttons) */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50">
                 <AnimatePresence>
@@ -169,7 +198,7 @@ const GameTable: React.FC<GameTableProps> = ({
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0, opacity: 0 }}
                             onClick={onMerdaShouted}
-                            className="w-32 h-32 md:w-48 md:h-48 rounded-full bg-gradient-to-br from-red-500 to-red-800 shadow-[0_0_50px_rgba(220,38,38,0.6)] border-4 md:border-8 border-red-900 flex items-center justify-center text-white font-black text-2xl md:text-4xl cursor-pointer active:scale-95 transition-transform"
+                            className="w-32 h-32 md:w-56 md:h-56 rounded-full bg-gradient-to-br from-red-500 to-red-800 shadow-[0_0_80px_rgba(220,38,38,0.8)] border-4 md:border-8 border-red-900 flex items-center justify-center text-white font-black text-2xl md:text-5xl cursor-pointer active:scale-95 transition-transform animate-pulse"
                         >
                             MERDA!
                         </motion.button>
@@ -183,22 +212,22 @@ const GameTable: React.FC<GameTableProps> = ({
                                 setHasLocalReacted(true);
                                 onMerdaReaction();
                             }}
-                            className="w-40 h-40 md:w-64 md:h-64 rounded-full bg-gradient-to-tr from-orange-600 to-red-600 shadow-[0_0_100px_rgba(234,88,12,0.8)] border-4 border-white flex flex-col items-center justify-center text-white font-black cursor-pointer active:scale-90 transition-transform hover:rotate-12"
+                            className="w-44 h-44 md:w-72 md:h-72 rounded-full bg-gradient-to-tr from-orange-600 to-red-600 shadow-[0_0_120px_rgba(234,88,12,0.9)] border-4 border-white flex flex-col items-center justify-center text-white font-black cursor-pointer active:scale-90 transition-transform hover:rotate-12"
                         >
-                            <span className="text-2xl md:text-5xl uppercase drop-shadow-lg">SALVATI!</span>
-                            <span className="text-[10px] md:text-sm mt-1 md:mt-2 font-normal opacity-80">(Clicca ORA!)</span>
+                            <span className="text-3xl md:text-6xl uppercase drop-shadow-lg">SALVATI!</span>
+                            <span className="text-[10px] md:text-sm mt-1 md:mt-2 font-normal opacity-80">(Tocca ORA!)</span>
                         </motion.button>
                     )}
                 </AnimatePresence>
             </div>
 
             {/* Top Left Leave Button */}
-            <div className="absolute top-3 left-3 md:top-6 md:left-6 z-40">
+            <div className="absolute top-4 left-4 z-40">
                 <button
                     onClick={() => setShowLeaveConfirm(true)}
-                    className="bg-red-500/10 hover:bg-red-500/30 border border-red-500/30 text-red-200 text-[10px] md:text-xs font-bold uppercase tracking-wider px-2 py-1 md:px-4 md:py-2 rounded-lg md:rounded-xl flex items-center gap-1 md:gap-2 transition-all shadow-lg backdrop-blur-md active:scale-95"
+                    className="bg-red-500/10 hover:bg-red-500/30 border border-red-500/30 text-red-200 text-[10px] md:text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-xl flex items-center gap-2 transition-all shadow-lg backdrop-blur-md active:scale-95"
                 >
-                    <span className="text-base md:text-lg leading-none font-normal">&times;</span>
+                    <span className="text-lg leading-none font-normal">&times;</span>
                     <span className="hidden sm:inline">Abbandona</span>
                 </button>
             </div>
@@ -220,7 +249,7 @@ const GameTable: React.FC<GameTableProps> = ({
                         >
                             <h3 className="text-xl font-bold text-white mb-2">Vuoi abbandonare?</h3>
                             <p className="text-neutral-400 mb-6 text-sm">
-                                Se abbandoni ora, la partita in corso verrà annullata per tutti i giocatori al tavolo.
+                                Se abbandoni ora, la partita in corso verrà annullata per tutti i partecipanti.
                             </p>
                             <div className="flex gap-3 justify-end">
                                 <button
@@ -234,7 +263,7 @@ const GameTable: React.FC<GameTableProps> = ({
                                         setShowLeaveConfirm(false);
                                         onLeaveRoom();
                                     }}
-                                    className="px-4 py-2 font-bold text-white bg-red-600 hover:bg-red-500 rounded-lg shadow-[0_0_15px_rgba(220,38,38,0.4)] transition-colors cursor-pointer"
+                                    className="px-4 py-2 font-bold text-white bg-red-600 hover:bg-red-500 rounded-lg shadow-xl transition-colors cursor-pointer"
                                 >
                                     Sì, Abbandona
                                 </button>
@@ -244,54 +273,30 @@ const GameTable: React.FC<GameTableProps> = ({
                 )}
             </AnimatePresence>
 
-            {/* Scoreboard Sidebar (Hidden on mobile) */}
-            <div className="hidden md:block absolute top-6 right-6 z-40 bg-black/60 backdrop-blur-md p-4 rounded-xl border border-white/10 w-48 shadow-2xl">
-                <h3 className="text-white text-xs font-bold uppercase tracking-widest mb-3 pb-2 border-b border-white/10">Scoreboard</h3>
-                <div className="space-y-1 md:space-y-2">
-                    {players.map(p => (
-                        <div key={p.id} className="flex justify-between items-center text-[10px] md:text-sm">
-                            <span className={`truncate mr-1 md:mr-2 ${p.id === player.id ? 'text-white font-bold' : 'text-neutral-400'}`}>
-                                {p.name}
-                            </span>
-                            <span className="text-orange-400 font-mono font-bold bg-orange-500/10 px-1 md:px-1.5 rounded">
-                                {p.chili}
-                            </span>
-                        </div>
-                    ))}
-                </div>
-            </div>
+            {/* Player Hand - Anchored to Bottom */}
+            <div className="w-full max-w-4xl relative z-40 flex flex-col items-center pb-8 md:pb-12">
+                <AnimatePresence>
+                    {gameState === 'merda_called' && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute -top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
+                        >
+                            {winnerId === player.id ? (
+                                <div className="bg-red-600 text-white font-black px-8 py-3 rounded-2xl border-4 border-white shadow-2xl text-2xl animate-bounce">
+                                    HAI FATTO MERDA!
+                                </div>
+                            ) : (hasLocalReacted || (reactedPlayers && reactedPlayers.includes(player.id))) && (
+                                <div className="bg-green-600 text-white font-black px-8 py-3 rounded-2xl border-4 border-white shadow-2xl text-2xl flex items-center gap-3">
+                                    <Check className="w-8 h-8" /> SEI SALVO!
+                                </div>
+                            )}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
-            {/* Player Hand */}
-            <div className="relative z-20 flex flex-col items-center pb-4 md:pb-8 pt-10 md:pt-20">
-                <p className="text-white mb-2 md:mb-4 text-[10px] md:text-sm font-bold bg-black/40 px-3 md:px-4 py-1 md:py-1.5 rounded-full border border-white/10 backdrop-blur-sm">
-                    {gameState === 'playing' ? (
-                        selectedCardId ? 'In attesa degli altri...' : 'Scegli la carta da passare'
-                    ) : 'Round Terminato'}
-                </p>
-
-                <div className="flex gap-2 sm:gap-4 items-end h-36 sm:h-44 md:h-60 mt-auto">
-                    {/* Badge Personale Salvato */}
-                    <AnimatePresence>
-                        {gameState === 'merda_called' && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0 }}
-                                className="absolute -top-12 left-1/2 -translate-x-1/2 z-50"
-                            >
-                                {winnerId === player.id ? (
-                                    <div className="bg-red-600 text-white font-black px-6 py-2 rounded-xl border-4 border-white shadow-2xl text-xl animate-bounce">
-                                        MERDA!
-                                    </div>
-                                ) : (hasLocalReacted || reactedPlayers.includes(player.id)) && (
-                                    <div className="bg-green-600 text-white font-black px-6 py-2 rounded-xl border-4 border-white shadow-2xl text-xl flex items-center gap-2">
-                                        <Check className="w-6 h-6" /> SEI SALVO!
-                                    </div>
-                                )}
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
+                <div className="flex justify-center items-end h-44 sm:h-52 md:h-72 w-full gap-1 md:gap-4 px-4">
                     <AnimatePresence>
                         {hand.map((card, i) => {
                             const isSelected = selectedCardId === card.id;
@@ -300,26 +305,33 @@ const GameTable: React.FC<GameTableProps> = ({
                                 <motion.div
                                     key={card.id}
                                     layoutId={card.id}
-                                    initial={{ y: -100, opacity: 0, scale: 0.8 }}
+                                    initial={{ y: 50, opacity: 0 }}
                                     animate={{
-                                        y: isSelected ? -30 : 0,
+                                        y: isSelected ? -40 : 0,
                                         opacity: 1,
                                         scale: isSelected ? 1.05 : 1,
+                                        rotate: (i - (hand.length - 1) / 2) * 5
                                     }}
-                                    whileHover={!selectedCardId && gameState === 'playing' ? { y: -15, rotate: (i - 2) * 2 } : {}}
-                                    exit={{ y: -200, opacity: 0, scale: 0.5, transition: { duration: 0.3 } }}
+                                    whileHover={!selectedCardId && gameState === 'playing' ? { y: -20, scale: 1.05 } : {}}
+                                    exit={{ y: -300, opacity: 0, scale: 0.5 }}
                                     onClick={() => handleCardClick(card.id)}
-                                    className={`relative w-16 h-28 sm:w-20 sm:h-32 md:w-32 md:h-52 lg:w-40 lg:h-60 bg-transparent rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all 
-                                        ${isSelected ? 'shadow-[0_0_20px_rgba(255,255,255,0.4)] ring-2 md:ring-4 ring-white z-50' : 'hover:shadow-xl md:hover:shadow-2xl'}
-                                        ${gameState !== 'playing' ? 'opacity-70 pointer-events-none' : ''}
+                                    className={`relative aspect-[2/3] w-auto h-full max-h-[140px] sm:max-h-[180px] md:max-h-[260px] cursor-pointer transition-all 
+                                        ${isSelected ? 'shadow-[0_0_30px_rgba(255,255,255,0.6)] ring-4 ring-white z-50' : 'hover:shadow-2xl'}
+                                        ${gameState !== 'playing' ? 'opacity-90 pointer-events-none' : ''}
                                     `}
                                     style={{ transformOrigin: 'bottom center' }}
                                 >
                                     <img
                                         src={getCardImagePath(card.suit, card.value)}
                                         alt={`${card.value} di ${card.suit}`}
-                                        className="w-full h-full object-cover rounded-xl shadow-lg border-2 border-white/10"
+                                        className="w-full h-full object-cover rounded-xl shadow-lg border-2 border-white/20"
                                     />
+                                    {/* Selected Indicator Overlay */}
+                                    {isSelected && (
+                                        <div className="absolute inset-0 bg-white/10 rounded-xl flex items-center justify-center">
+                                            <div className="bg-white text-black font-black px-2 py-1 rounded text-[10px] uppercase">Passata</div>
+                                        </div>
+                                    )}
                                 </motion.div>
                             );
                         })}
@@ -327,6 +339,10 @@ const GameTable: React.FC<GameTableProps> = ({
                 </div>
             </div>
 
+            {/* Mobile Bottom Info (Optional) */}
+            <div className="md:hidden absolute bottom-2 left-4 text-white/40 text-[8px] font-mono tracking-widest uppercase">
+                {player.name} &bull; {player.chili} Chili
+            </div>
         </div>
     );
 };
