@@ -368,13 +368,19 @@ export function setupGameHandlers(io, socket) {
             room.penaltyDeck = fullDeck;
         }
 
-        const loser = room.players.find(p => p.id === loserId);
+        const penaltyCard = room.penaltyDeck.pop() || { suit: 'Denari', value: 1 };
+        let loser = room.players.find(p => p.id === loserId);
+
+        // If not a human, check dummies
+        if (!loser && room.dummyHands) {
+            loser = room.dummyHands.find(d => d.id === loserId);
+        }
 
         if (loser) {
-            const penaltyCard = room.penaltyDeck.pop() || { suit: 'Denari', value: 1 };
             if ((penaltyCard.value === 7 || penaltyCard.value === 10) && penaltyCard.suit === 'Denari') {
                 loser.chili = 0;
             } else {
+                if (loser.chili === undefined) loser.chili = 0;
                 loser.chili += penaltyCard.value;
             }
         } else {
