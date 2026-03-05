@@ -44,9 +44,8 @@ const GameTable: React.FC<GameTableProps> = ({
 
     const getOpponentPosition = (index: number, total: number): React.CSSProperties => {
         // Distribute strictly around the top arc (180 to 0 degrees)
-        // With some padding for the sides.
-        const startAngle = Math.PI * 1.05; // Slightly below the left side
-        const endAngle = -Math.PI * 0.05;  // Slightly below the right side
+        const startAngle = Math.PI * 1.05;
+        const endAngle = -Math.PI * 0.05;
 
         let angle;
         if (total === 1) {
@@ -56,10 +55,10 @@ const GameTable: React.FC<GameTableProps> = ({
         }
 
         const rx = 42; // Horizontal radius (%)
-        const ry = 45; // Vertical radius (%)
+        const ry = 38; // Vertical radius (%) - Reduced to bring players down
 
         const x = 50 + rx * Math.cos(angle);
-        const y = 50 - ry * Math.sin(angle); // Inverse Y for top distribution
+        const y = 52 - ry * Math.sin(angle); // Center Y shifted down to 52 for more top headroom
 
         return {
             position: 'absolute',
@@ -155,7 +154,24 @@ const GameTable: React.FC<GameTableProps> = ({
                 ))}
             </div>
 
-            {/* Top Bar / Center Indicators */}
+            {/* Top Right Scoreboard (PC Only) */}
+            <div className="hidden lg:block absolute top-6 right-6 z-40 bg-black/60 backdrop-blur-md p-4 rounded-xl border border-white/10 w-48 shadow-2xl">
+                <h3 className="text-white text-xs font-bold uppercase tracking-widest mb-3 pb-2 border-b border-white/10">Scoreboard</h3>
+                <div className="space-y-2">
+                    {players.map(p => (
+                        <div key={p.id} className="flex justify-between items-center text-sm">
+                            <span className={`truncate mr-2 ${p.id === player.id ? 'text-white font-bold' : 'text-neutral-400'}`}>
+                                {p.name}
+                            </span>
+                            <span className="text-orange-400 font-mono font-bold bg-orange-500/10 px-1.5 rounded">
+                                {p.chili}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Center Top Info Indicator */}
             <div className="relative z-30 pt-4 flex flex-col items-center gap-4">
                 <AnimatePresence>
                     {gameState === 'playing' && (
@@ -170,23 +186,6 @@ const GameTable: React.FC<GameTableProps> = ({
                         </motion.div>
                     )}
                 </AnimatePresence>
-
-                {/* Scoreboard Sidebar (Minimal on desktop, hidden on mobile) */}
-                <div className="hidden lg:block absolute top-0 -right-72 bg-black/60 backdrop-blur-md p-4 rounded-xl border border-white/10 w-48 shadow-2xl">
-                    <h3 className="text-white text-xs font-bold uppercase tracking-widest mb-3 pb-2 border-b border-white/10">Scoreboard</h3>
-                    <div className="space-y-2">
-                        {players.map(p => (
-                            <div key={p.id} className="flex justify-between items-center text-sm">
-                                <span className={`truncate mr-2 ${p.id === player.id ? 'text-white font-bold' : 'text-neutral-400'}`}>
-                                    {p.name}
-                                </span>
-                                <span className="text-orange-400 font-mono font-bold bg-orange-500/10 px-1.5 rounded">
-                                    {p.chili}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
             </div>
 
             {/* Center of the Table (Reaction / Shout Buttons) */}
