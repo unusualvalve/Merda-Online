@@ -10,7 +10,7 @@ interface LobbyProps {
     players: Player[];
     player: Player | null;
     onStart: () => void;
-    lastPenalty: { card: Card; loserId: string } | null;
+    lastPenalty: { card: Card; loserId: string; loserName?: string } | null;
     onLeaveRoom: () => void;
     isCreator: boolean;
 }
@@ -92,7 +92,7 @@ const Lobby: React.FC<LobbyProps> = ({ onJoin, onCreate, roomId, players, player
                         <div>
                             <h3 className="font-bold text-red-400">Fine Round!</h3>
                             <p className="text-sm text-neutral-300">
-                                Il giocatore <span className="font-bold text-white">{players.find(p => p.id === lastPenalty.loserId)?.name || 'Sconosciuto'}</span> ha pescato il{' '}
+                                Il giocatore <span className="font-bold text-white">{lastPenalty.loserName || players.find(p => p.id === lastPenalty.loserId)?.name || 'Sconosciuto'}</span> ha pescato il{' '}
                                 <span className="font-bold text-orange-400">{lastPenalty.card.value} di {lastPenalty.card.suit}</span>.
                             </p>
                         </div>

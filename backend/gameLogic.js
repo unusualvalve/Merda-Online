@@ -165,8 +165,10 @@ export function setupGameHandlers(io, socket) {
             const dummyCount = 4 - N;
             for (let i = 0; i < dummyCount; i++) {
                 room.dummyHands.push({
-                    id: `dummy-${i}`,
-                    hand: playDeck.splice(0, handSize)
+                    id: `dummy-${i + 1}`,
+                    name: `Bot ${i + 1}`,
+                    hand: playDeck.splice(0, handSize),
+                    chili: 0
                 });
             }
         }
@@ -404,6 +406,7 @@ export function setupGameHandlers(io, socket) {
 
         io.to(roomId).emit('round_end', {
             loserId,
+            loserName: loser ? loser.name : 'Sconosciuto',
             penaltyCard,
             players: room.players.map(p => ({ id: p.id, name: p.name, avatar: p.avatar, chili: p.chili, status: p.status }))
         });

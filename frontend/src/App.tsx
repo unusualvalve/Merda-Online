@@ -31,7 +31,7 @@ function App() {
   const [errorMsg, setErrorMsg] = useState('');
   const [winnerId, setWinnerId] = useState<string | null>(null);
   const [reactedPlayers, setReactedPlayers] = useState<string[]>([]);
-  const [lastPenalty, setLastPenalty] = useState<{ card: Card, loserId: string } | null>(null);
+  const [lastPenalty, setLastPenalty] = useState<{ card: Card, loserId: string, loserName?: string } | null>(null);
   const [isCreator, setIsCreator] = useState(false);
 
   useEffect(() => {
@@ -92,9 +92,9 @@ function App() {
       setReactedPlayers(safePlayerIds);
     });
 
-    socket.on('round_end', ({ loserId, penaltyCard, players }) => {
+    socket.on('round_end', ({ loserId, loserName, penaltyCard, players }) => {
       setGameState('lobby'); // Go back to waiting to restart or auto-restart
-      setLastPenalty({ card: penaltyCard, loserId });
+      setLastPenalty({ card: penaltyCard, loserId, loserName });
       setPlayers(players);
       setHand([]);
       setReactedPlayers([]);
