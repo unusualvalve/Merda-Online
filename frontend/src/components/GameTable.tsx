@@ -55,10 +55,10 @@ const GameTable: React.FC<GameTableProps> = ({
         }
 
         const rx = 42; // Horizontal radius (%)
-        const ry = 38; // Vertical radius (%) - Reduced to bring players down
+        const ry = 38; // Vertical radius (%)
 
         const x = 50 + rx * Math.cos(angle);
-        const y = 52 - ry * Math.sin(angle); // Center Y shifted down to 52 for more top headroom
+        const y = 52 - ry * Math.sin(angle);
 
         return {
             position: 'absolute',
@@ -76,7 +76,7 @@ const GameTable: React.FC<GameTableProps> = ({
     };
 
     return (
-        <div className="relative w-full h-screen bg-[#1c3a26] overflow-hidden flex flex-col justify-between items-center p-4 isolate">
+        <div className="relative w-full h-screen bg-[#1c3a26] overflow-hidden flex flex-col justify-between items-center p-4 isolate touch-none select-none">
             {/* Table Texture/Border */}
             <div className="absolute inset-0 border-[10px] md:border-[20px] border-amber-900/50 rounded-2xl md:rounded-3xl m-2 md:m-4 pointer-events-none mix-blend-overlay shadow-inner z-0" />
             <div className="absolute inset-[20px] md:inset-[40px] border-2 border-white/5 rounded-xl pointer-events-none z-0" />
@@ -90,21 +90,21 @@ const GameTable: React.FC<GameTableProps> = ({
                     <div key={opp.id} style={getOpponentPosition(index, opponents.length)} className="flex flex-col items-center">
                         <div className="relative text-center">
                             {/* Avatar Circolare */}
-                            <div className="w-14 h-14 md:w-20 md:h-20 rounded-full border-2 border-white/30 overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.8)] bg-neutral-800 flex items-center justify-center shrink-0">
+                            <div className="w-12 h-12 md:w-20 md:h-20 rounded-full border-2 border-white/30 overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.8)] bg-neutral-800 flex items-center justify-center shrink-0">
                                 {opp.avatar ? (
                                     <img src={opp.avatar} alt="Avatar" className="w-full h-full object-cover" />
                                 ) : (
-                                    <User className="w-8 h-8 text-neutral-500" />
+                                    <User className="w-6 h-6 md:w-8 md:h-8 text-neutral-500" />
                                 )}
                             </div>
 
                             {/* Nome (Badge) */}
                             <div className="absolute -bottom-2 md:-bottom-3 left-1/2 -translate-x-1/2 bg-black/90 border border-white/10 px-2 py-0.5 md:px-4 md:py-1 rounded-full backdrop-blur-md whitespace-nowrap shadow-xl">
-                                <p className="font-bold text-[10px] md:text-xs text-white tracking-widest uppercase">{opp.name}</p>
+                                <p className="font-bold text-[9px] md:text-xs text-white tracking-widest uppercase">{opp.name}</p>
                             </div>
 
                             {/* Chili Merda Badge */}
-                            <div className="absolute -top-1 -right-4 bg-orange-600 border border-white/20 px-1.5 py-0.5 md:px-2 md:py-1 rounded-lg text-[10px] md:text-xs font-bold text-white shadow-xl flex items-center gap-1">
+                            <div className="absolute -top-1 -right-4 bg-orange-600 border border-white/20 px-1.5 py-0.5 md:px-2 md:py-1 rounded-lg text-[9px] md:text-xs font-bold text-white shadow-xl flex items-center gap-1">
                                 💩 {opp.chili}
                             </div>
 
@@ -136,7 +136,7 @@ const GameTable: React.FC<GameTableProps> = ({
                         </div>
 
                         {/* Fanned Cards (UNO Style) */}
-                        <div className="flex justify-center -space-x-3 md:-space-x-5 mt-4 md:mt-10 scale-75 md:scale-100">
+                        <div className="flex justify-center -space-x-3 md:-space-x-5 mt-2 md:mt-10 scale-75 md:scale-100">
                             {Array.from({ length: handSize }).map((_, i) => (
                                 <motion.div
                                     key={i}
@@ -146,7 +146,7 @@ const GameTable: React.FC<GameTableProps> = ({
                                         transform: `rotate(${(i - (handSize - 1) / 2) * 15}deg) translateY(${Math.abs(i - (handSize - 1) / 2) * 4}px)`,
                                         transformOrigin: 'bottom center'
                                     }}
-                                    className="w-6 h-9 md:w-10 md:h-15 rounded-md shadow-[0_0_15px_rgba(0,0,0,1)] border border-white/20 bg-gradient-to-br from-red-600 to-red-950"
+                                    className="w-5 h-8 md:w-10 md:h-15 rounded-md shadow-[0_0_15px_rgba(0,0,0,1)] border border-white/20 bg-gradient-to-br from-red-600 to-red-950"
                                 />
                             ))}
                         </div>
@@ -172,15 +172,15 @@ const GameTable: React.FC<GameTableProps> = ({
             </div>
 
             {/* Center Top Info Indicator */}
-            <div className="relative z-30 pt-4 flex flex-col items-center gap-4">
+            <div className="relative z-30 pt-2 md:pt-4 flex flex-col items-center gap-2 md:gap-4">
                 <AnimatePresence>
                     {gameState === 'playing' && (
                         <motion.div
                             initial={{ opacity: 0, y: -20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="bg-black/40 px-4 py-1.5 rounded-full border border-white/10 backdrop-blur-md shadow-lg"
+                            className="bg-black/40 px-3 py-1 md:px-4 md:py-1.5 rounded-full border border-white/10 backdrop-blur-md shadow-lg"
                         >
-                            <p className="text-white text-[10px] md:text-xs font-bold uppercase tracking-widest">
+                            <p className="text-white text-[9px] md:text-xs font-bold uppercase tracking-widest text-center">
                                 {selectedCardId ? 'In attesa del turno...' : 'Scegli la carta da passare'}
                             </p>
                         </motion.div>
@@ -197,7 +197,7 @@ const GameTable: React.FC<GameTableProps> = ({
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0, opacity: 0 }}
                             onClick={onMerdaShouted}
-                            className="w-32 h-32 md:w-56 md:h-56 rounded-full bg-gradient-to-br from-red-500 to-red-800 shadow-[0_0_80px_rgba(220,38,38,0.8)] border-4 md:border-8 border-red-900 flex items-center justify-center text-white font-black text-2xl md:text-5xl cursor-pointer active:scale-95 transition-transform animate-pulse"
+                            className="w-28 h-28 md:w-56 md:h-56 rounded-full bg-gradient-to-br from-red-500 to-red-800 shadow-[0_0_80px_rgba(220,38,38,0.8)] border-4 md:border-8 border-red-900 flex items-center justify-center text-white font-black text-xl md:text-5xl cursor-pointer active:scale-95 transition-transform animate-pulse"
                         >
                             MERDA!
                         </motion.button>
@@ -211,22 +211,22 @@ const GameTable: React.FC<GameTableProps> = ({
                                 setHasLocalReacted(true);
                                 onMerdaReaction();
                             }}
-                            className="w-44 h-44 md:w-72 md:h-72 rounded-full bg-gradient-to-tr from-orange-600 to-red-600 shadow-[0_0_120px_rgba(234,88,12,0.9)] border-4 border-white flex flex-col items-center justify-center text-white font-black cursor-pointer active:scale-90 transition-transform hover:rotate-12"
+                            className="w-36 h-36 md:w-72 md:h-72 rounded-full bg-gradient-to-tr from-orange-600 to-red-600 shadow-[0_0_120px_rgba(234,88,12,0.9)] border-4 border-white flex flex-col items-center justify-center text-white font-black cursor-pointer active:scale-90 transition-transform hover:rotate-12"
                         >
-                            <span className="text-3xl md:text-6xl uppercase drop-shadow-lg">SALVATI!</span>
-                            <span className="text-[10px] md:text-sm mt-1 md:mt-2 font-normal opacity-80">(Tocca ORA!)</span>
+                            <span className="text-2xl md:text-6xl uppercase drop-shadow-lg">SALVATI!</span>
+                            <span className="text-[9px] md:text-sm mt-1 md:mt-2 font-normal opacity-80">(Tocca ORA!)</span>
                         </motion.button>
                     )}
                 </AnimatePresence>
             </div>
 
             {/* Top Left Leave Button */}
-            <div className="absolute top-4 left-4 z-40">
+            <div className="absolute top-2 left-2 md:top-4 md:left-4 z-40">
                 <button
                     onClick={() => setShowLeaveConfirm(true)}
-                    className="bg-red-500/10 hover:bg-red-500/30 border border-red-500/30 text-red-200 text-[10px] md:text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-xl flex items-center gap-2 transition-all shadow-lg backdrop-blur-md active:scale-95"
+                    className="bg-red-500/10 hover:bg-red-500/30 border border-red-500/30 text-red-200 text-[9px] md:text-xs font-bold uppercase tracking-wider px-2 py-1 md:px-3 md:py-1.5 rounded-xl flex items-center gap-1 md:gap-2 transition-all shadow-lg backdrop-blur-md active:scale-95"
                 >
-                    <span className="text-lg leading-none font-normal">&times;</span>
+                    <span className="text-base md:text-lg leading-none font-normal">&times;</span>
                     <span className="hidden sm:inline">Abbandona</span>
                 </button>
             </div>
@@ -273,29 +273,29 @@ const GameTable: React.FC<GameTableProps> = ({
             </AnimatePresence>
 
             {/* Player Hand - Anchored to Bottom */}
-            <div className="w-full max-w-4xl relative z-40 flex flex-col items-center pb-8 md:pb-12">
+            <div className="w-full max-w-4xl relative z-40 flex flex-col items-center pb-4 md:pb-12">
                 <AnimatePresence>
                     {gameState === 'merda_called' && (
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0 }}
-                            className="absolute -top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
+                            className="absolute -top-12 md:-top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
                         >
                             {winnerId === player.id ? (
-                                <div className="bg-red-600 text-white font-black px-8 py-3 rounded-2xl border-4 border-white shadow-2xl text-2xl animate-bounce">
+                                <div className="bg-red-600 text-white font-black px-6 py-2 md:px-8 md:py-3 rounded-xl md:rounded-2xl border-2 md:border-4 border-white shadow-2xl text-lg md:text-2xl animate-bounce whitespace-nowrap">
                                     HAI FATTO MERDA!
                                 </div>
                             ) : (hasLocalReacted || (reactedPlayers && reactedPlayers.includes(player.id))) && (
-                                <div className="bg-green-600 text-white font-black px-8 py-3 rounded-2xl border-4 border-white shadow-2xl text-2xl flex items-center gap-3">
-                                    <Check className="w-8 h-8" /> SEI SALVO!
+                                <div className="bg-green-600 text-white font-black px-6 py-2 md:px-8 md:py-3 rounded-xl md:rounded-2xl border-2 md:border-4 border-white shadow-2xl text-lg md:text-2xl flex items-center gap-2 md:gap-3 whitespace-nowrap">
+                                    <Check className="w-5 h-5 md:w-8 md:h-8" /> SEI SALVO!
                                 </div>
                             )}
                         </motion.div>
                     )}
                 </AnimatePresence>
 
-                <div className="flex justify-center items-end h-44 sm:h-52 md:h-72 w-full gap-1 md:gap-4 px-4">
+                <div className="flex justify-center items-end h-32 sm:h-44 md:h-72 w-full gap-1 md:gap-4 px-2 md:px-4">
                     <AnimatePresence>
                         {hand.map((card, i) => {
                             const isSelected = selectedCardId === card.id;
@@ -306,16 +306,16 @@ const GameTable: React.FC<GameTableProps> = ({
                                     layoutId={card.id}
                                     initial={{ y: 50, opacity: 0 }}
                                     animate={{
-                                        y: isSelected ? -40 : 0,
+                                        y: isSelected ? -30 : 0,
                                         opacity: 1,
                                         scale: isSelected ? 1.05 : 1,
                                         rotate: (i - (hand.length - 1) / 2) * 5
                                     }}
-                                    whileHover={!selectedCardId && gameState === 'playing' ? { y: -20, scale: 1.05 } : {}}
+                                    whileHover={!selectedCardId && gameState === 'playing' ? { y: -15, scale: 1.05 } : {}}
                                     exit={{ y: -300, opacity: 0, scale: 0.5 }}
                                     onClick={() => handleCardClick(card.id)}
-                                    className={`relative aspect-[2/3] w-auto h-full max-h-[140px] sm:max-h-[180px] md:max-h-[260px] cursor-pointer transition-all 
-                                        ${isSelected ? 'shadow-[0_0_30px_rgba(255,255,255,0.6)] ring-4 ring-white z-50' : 'hover:shadow-2xl'}
+                                    className={`relative aspect-[2/3] w-auto h-full max-h-[105px] sm:max-h-[180px] md:max-h-[260px] cursor-pointer transition-all 
+                                        ${isSelected ? 'shadow-[0_0_20px_rgba(255,255,255,0.6)] ring-2 md:ring-4 ring-white z-50' : 'hover:shadow-2xl'}
                                         ${gameState !== 'playing' ? 'opacity-90 pointer-events-none' : ''}
                                     `}
                                     style={{ transformOrigin: 'bottom center' }}
@@ -323,12 +323,12 @@ const GameTable: React.FC<GameTableProps> = ({
                                     <img
                                         src={getCardImagePath(card.suit, card.value)}
                                         alt={`${card.value} di ${card.suit}`}
-                                        className="w-full h-full object-cover rounded-xl shadow-lg border-2 border-white/20"
+                                        className="w-full h-full object-cover rounded-lg md:rounded-xl shadow-lg border border-white/20 md:border-2"
                                     />
                                     {/* Selected Indicator Overlay */}
                                     {isSelected && (
-                                        <div className="absolute inset-0 bg-white/10 rounded-xl flex items-center justify-center">
-                                            <div className="bg-white text-black font-black px-2 py-1 rounded text-[10px] uppercase">Passata</div>
+                                        <div className="absolute inset-0 bg-white/10 rounded-lg md:rounded-xl flex items-center justify-center">
+                                            <div className="bg-white text-black font-black px-1.5 py-0.5 md:px-2 md:py-1 rounded text-[8px] md:text-[10px] uppercase">Passata</div>
                                         </div>
                                     )}
                                 </motion.div>
@@ -338,8 +338,8 @@ const GameTable: React.FC<GameTableProps> = ({
                 </div>
             </div>
 
-            {/* Mobile Bottom Info (Optional) */}
-            <div className="md:hidden absolute bottom-2 left-4 text-white/40 text-[8px] font-mono tracking-widest uppercase">
+            {/* Mobile Bottom Info */}
+            <div className="md:hidden absolute bottom-1 left-4 text-white/30 text-[7px] font-mono tracking-widest uppercase pointer-events-none">
                 {player.name} &bull; {player.chili} Chili
             </div>
         </div>
