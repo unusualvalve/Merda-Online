@@ -271,6 +271,8 @@ export function setupGameHandlers(io, socket) {
                 io.to(roomId).emit('reaction_update', []);
 
                 // 2-3 Player Dummy Reactions
+                const totalOpponents = (room.players.length + (room.dummyHands ? room.dummyHands.length : 0)) - 1;
+
                 if (room.dummyHands && room.dummyHands.length > 0) {
                     room.dummyHands.forEach(dummy => {
                         const delay = 400 + Math.random() * 1200; // 0.4s to 1.6s
@@ -279,7 +281,8 @@ export function setupGameHandlers(io, socket) {
                                 if (!room.merdaReactions.find(r => r.id === dummy.id)) {
                                     room.merdaReactions.push({ id: dummy.id, timestamp: Date.now() });
                                     io.to(roomId).emit('reaction_update', room.merdaReactions.map(r => r.id));
-                                    if (room.merdaReactions.length === 3) {
+
+                                    if (room.merdaReactions.length >= totalOpponents) {
                                         clearTimeout(room.merdaTimeout);
                                         handleRoundEnd(roomId, io);
                                     }
@@ -306,8 +309,7 @@ export function setupGameHandlers(io, socket) {
         if (!player) return;
 
         // Verify it's not the winner themselves registering a reaction
-        const winnerId = room.players.find(p => p.hand.some(c => p.hand.filter(c2 => c2.value === c.value).length === 4))?.id;
-        if (socket.id === winnerId) return;
+        if (socket.id === room.winnerId) return;
 
         if (!room.merdaReactions.find(r => r.id === socket.id)) {
             room.merdaReactions.push({ id: socket.id, timestamp });
@@ -315,8 +317,9 @@ export function setupGameHandlers(io, socket) {
             // Broadcast Safe Players
             io.to(roomId).emit('reaction_update', room.merdaReactions.map(r => r.id));
 
-            // If 3 people clicked, end round
-            if (room.merdaReactions.length === 3) {
+            // End round if everyone else has reacted
+            const totalOpponents = (room.players.length + (room.dummyHands ? room.dummyHands.length : 0)) - 1;
+            if (room.merdaReactions.length >= totalOpponents) {
                 clearTimeout(room.merdaTimeout);
                 handleRoundEnd(roomId, io);
             }
@@ -329,16 +332,25 @@ export function setupGameHandlers(io, socket) {
 
         room.merdaReactions.sort((a, b) => a.timestamp - b.timestamp);
 
-        const winnerId = room.players.find(p => p.hand.length === 4 && p.hand.every(c => c.value === p.hand[0].value))?.id;
+        const winnerId = room.winnerId;
         const reactors = room.merdaReactions.map(r => r.id);
 
         let loserId = null;
-        const missingPlayers = room.players.filter(p => p.id !== winnerId && !reactors.includes(p.id));
+        // Search across real and dummy players
+        const allOpponents = [
+            ...room.players.map(p => ({ id: p.id, isDummy: false })),
+            ...(room.dummyHands ? room.dummyHands.map(d => ({ id: d.id, isDummy: true })) : [])
+        ].filter(p => p.id !== winnerId);
 
-        if (missingPlayers.length > 0) {
-            loserId = missingPlayers[0].id; // Assign to first missing if timeout
+        const missing = allOpponents.filter(p => !reactors.includes(p.id));
+
+        if (missing.length > 0) {
+            loserId = missing[0].id; // First one who didn't react
+        } else if (room.merdaReactions.length > 0) {
+            loserId = room.merdaReactions[room.merdaReactions.length - 1].id; // Last one to react
         } else {
-            loserId = room.merdaReactions[room.merdaReactions.length - 1].id;
+            // Extremal edge case: winner only player?
+            loserId = winnerId;
         }
 
         if (room.penaltyDeck.length === 0) {
