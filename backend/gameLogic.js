@@ -341,9 +341,6 @@ export function setupGameHandlers(io, socket) {
             loserId = room.merdaReactions[room.merdaReactions.length - 1].id;
         }
 
-        const loser = room.players.find(p => p.id === loserId);
-
-        // If penalty deck is empty, reset it based on N.
         if (room.penaltyDeck.length === 0) {
             const N = room.players.length;
             const requiredCards = N * (N >= 5 ? 5 : 4);
@@ -359,11 +356,17 @@ export function setupGameHandlers(io, socket) {
             room.penaltyDeck = fullDeck;
         }
 
-        const penaltyCard = room.penaltyDeck.pop() || { suit: 'Denari', value: 1 };
-        if ((penaltyCard.value === 7 || penaltyCard.value === 10) && penaltyCard.suit === 'Denari') {
-            loser.chili = 0;
+        const loser = room.players.find(p => p.id === loserId);
+
+        if (loser) {
+            const penaltyCard = room.penaltyDeck.pop() || { suit: 'Denari', value: 1 };
+            if ((penaltyCard.value === 7 || penaltyCard.value === 10) && penaltyCard.suit === 'Denari') {
+                loser.chili = 0;
+            } else {
+                loser.chili += penaltyCard.value;
+            }
         } else {
-            loser.chili += penaltyCard.value;
+            console.error(`[handleRoundEnd] No loser found for ID: ${loserId}`);
         }
 
         room.status = 'waiting';
